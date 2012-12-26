@@ -42,12 +42,6 @@
         .data(cartogram(json, object.geometries).features);
     paths.enter().append('path')
         .attr('d', cartogram.path);
-    setInterval(function() {
-      paths.data(cartogram(json, object.geometries).features)
-          .transition()
-            .duration(500)
-            .attr("d", cartogram.path);
-    }, 2000)
   });
   </script>
 </body></html>
