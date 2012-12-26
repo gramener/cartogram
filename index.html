@@ -18,32 +18,36 @@
   <script>
   d3.json('S01_PC.topo.json', function(json) {
     var svg = d3.select('svg.plain');
-    var shape = topojson.object(json, d3.values(json.objects)[0]);
+    var object = d3.values(json.objects)[0];
+    var shape = topojson.object(json, object);
     var bounds = d3.geo.bounds(shape);
     var projection = d3.geo.albers()
         .translate([parseInt(svg.attr('width'))/2, parseInt(svg.attr('height'))/2])
-        // .parallels([bounds[0][0], bounds[1][0]])
+        .parallels([bounds[0][1], bounds[1][1]])
         .origin([(bounds[0][0] + bounds[1][0])/2, (bounds[0][1] + bounds[1][1])/2])
         .scale(3900);
 
     d3.select('svg.plain').selectAll('path')
         .data(shape.geometries)
       .enter().append('path')
-        .attr('fill', function(v) { return '#ccc'; })
         .attr('d', d3.geo.path().projection(projection))
 
     var svg = d3.select('svg.carto');
     var cartogram = d3.cartogram()
         .projection(projection)
         .value(function(d) {
-            return Math.random();
+            return Math.exp(1 + Math.random());
         });
-    var features = cartogram(json, d3.values(json.objects)[0].geometries).features;
-    svg.selectAll('path')
-        .data(features)
-      .enter().append('path')
-        .attr('fill', function(v) { return '#ccc'; })
+    var paths = svg.selectAll('path')
+        .data(cartogram(json, object.geometries).features);
+    paths.enter().append('path')
         .attr('d', cartogram.path);
+    setInterval(function() {
+      paths.data(cartogram(json, object.geometries).features)
+          .transition()
+            .duration(500)
+            .attr("d", cartogram.path);
+    }, 2000)
   });
   </script>
 </body></html>
