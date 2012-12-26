@@ -1,0 +1,23 @@
+header, .header {
+    background-color: #000;
+    color: #F4B903;
+    padding: 1.5em 0;
+    margin-bottom: 2em;
+}
+
+header h1, .header h1 {
+    text-transform: uppercase;
+    margin: 0;
+    display: inline-block;
+    width: 825px; /* Container width, less gramener logo width, less a bit of extra space */
+}
+
+header .gramenerlogo, .header .gramenerlogo {
+    display: inline-block;
+    /* Get rid of the text by indenting it far to the left, and use the Gramener logo */
+    text-indent: -9999px;
+    width: 110px;
+    height: 20px;
+    line-height: 2em;
+    background-image: url(data:image/png;base64,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);
+}
