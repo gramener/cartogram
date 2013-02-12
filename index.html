@@ -18,20 +18,7 @@
 
 <div class="container">
   <form class="form-inline">
-    <select name="map">
-      <optgroup label="Map">
-        <option>India</option>
-        <option>Andhra Pradesh</option>
-        <option>...</option>
-      </optgroup>
-    </select>
-    <select name="division" class="input-medium">
-      <optgroup label="Division">
-        <option>District</option>
-        <option>Parliamentary</option>
-        <option>Assembly</option>
-      </optgroup>
-    </select>
+    <select name="map"></select>
     <select name="cartogram" class="input-medium">
       <optgroup label="Cartogram">
         <option>Stretch</option>
@@ -52,7 +39,6 @@
     <button class="btn">Upload</button>
   </form>
   <svg class="carto" xmlns="http://www.w3.org/2000/svg" width="940" height="700"></svg>
-  <p>Right now, none of the functionality works. But eventually, we'll get it all going.</p>
 </div>
 
 <!-- cartogram.js does not work with d3.v3 -->
@@ -60,26 +46,48 @@
 <script src="topojson.v0.min.js"></script>
 <script src="cartogram.js"></script>
 <script>
-  d3.json('S01_PC.topo.json', function(json) {
+  d3.json('maps/metadata.json', function(json) {
+    var select_map = d3.select('select[name="map"]');
+    select_map.selectAll('option')
+        .data(json)
+      .enter()
+        .append('option')
+        .attr('value', function(d) { return d[0]; })
+        .text(function(d) { return d[1]; });
+
+    select_map.on('change', function(d, i) {
+        var map = select_map.property('value');
+        d3.json('maps/' + map, loadmap);
+    });
+  });
+
+
+  function loadmap(json) {
     var object = d3.values(json.objects)[0];
     var shape = topojson.object(json, object);
     var bounds = d3.geo.bounds(shape);
     var svg = d3.select('svg.carto');
+    var width = parseInt(svg.attr('width'));
+    var height = parseInt(svg.attr('height'));
     var projection = d3.geo.albers()
-        .translate([parseInt(svg.attr('width'))/2, parseInt(svg.attr('height'))/2])
+        .translate([width/2, height/2])
         .parallels([bounds[0][1], bounds[1][1]])
         .origin([(bounds[0][0] + bounds[1][0])/2, (bounds[0][1] + bounds[1][1])/2])
         // TODO: determine the scale automatically
-        .scale(5500);
+        .scale(40000);
+
     var cartogram = d3.cartogram()
         .projection(projection)
         .value(function(d) {
-            return Math.exp(1 + Math.random());
+            return Math.exp(Math.random()*3);
         });
+    svg.selectAll('*').remove();
     var paths = svg.selectAll('path')
-        .data(cartogram(json, object.geometries).features);
+        .data(shape.geometries);
     paths.enter().append('path')
-        .attr('d', cartogram.path);
-  });
+        .attr('d', d3.geo.path().projection(projection))
+        .append('title')
+          .text(function(d, i) { var p = shape.geometries[i].properties; return p.AC_NAME || p.PC_NAME; });
+  }
 </script>
 </body></html>
