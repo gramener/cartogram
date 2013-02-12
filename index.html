@@ -42,10 +42,11 @@
 </div>
 
 <!-- cartogram.js does not work with d3.v3 -->
-<script src="d3.v2.min.js"></script>
+<script src="d3.v3.min.js"></script>
 <script src="topojson.v0.min.js"></script>
 <script src="cartogram.js"></script>
 <script>
+(function() {
   d3.json('maps/metadata.json', function(json) {
     var select_map = d3.select('select[name="map"]');
     select_map.selectAll('option')
@@ -58,11 +59,42 @@
     select_map.on('change', function(d, i) {
         var map = select_map.property('value');
         d3.json('maps/' + map, loadmap);
-    });
+    }).on('change')();
   });
 
+  var svg = d3.select('svg.carto');
+  var width = parseInt(svg.attr('width'));
+  var height = parseInt(svg.attr('height'));
 
-  function loadmap(json) {
+  var projection = d3.geo.albers();
+  var path = d3.geo.path()
+      .projection(projection);
+
+  function loadmap(error, json) {
+    var object = d3.values(json.objects)[0];
+    var shape = topojson.object(json, object);
+
+    // http://bl.ocks.org/4707858
+    projection
+        .scale(1)
+        .translate([0, 0]);
+
+    var b = path.bounds(shape),
+        s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+        t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+
+    projection
+        .scale(s)
+        .translate(t);
+
+    svg.selectAll('*').remove();
+    svg.append('path')
+        .datum(shape)
+        .attr('d', path);
+  }
+
+
+  function loadmap_d3_v2(json) {
     var object = d3.values(json.objects)[0];
     var shape = topojson.object(json, object);
     var bounds = d3.geo.bounds(shape);
@@ -89,5 +121,6 @@
         .append('title')
           .text(function(d, i) { var p = shape.geometries[i].properties; return p.AC_NAME || p.PC_NAME; });
   }
+})();
 </script>
 </body></html>
