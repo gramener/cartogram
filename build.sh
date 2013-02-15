@@ -54,11 +54,13 @@ function topojson_ac {
 function topojson_meta {
     python <<EOF
 import os
+import csv
 import json
 import glob
 
 file_state = {}
 state_name = {}
+properties = []
 for filename in glob.glob('maps/*_PC.json') + glob.glob('maps/*_AC.json'):
     data = json.load(open(filename))
     p = data['objects'].values()[0]['geometries'][0]['properties']
@@ -66,16 +68,27 @@ for filename in glob.glob('maps/*_PC.json') + glob.glob('maps/*_AC.json'):
         state_name[p['ST_CODE']] = p['ST_NAME']
     file_state[os.path.split(filename)[-1]] = p['ST_CODE']
 
+    for p in data['objects'].values()[0]['geometries']:
+        properties.append(p['properties'])
+        properties[-1]['filename'] = filename
+
 for filename in file_state:
     file_state[filename] = state_name[file_state[filename]]
 
 with open('maps/metadata.json', 'w') as fp:
     fp.write(json.dumps(sorted(file_state.items())))
 
+fields = ['filename', 'ST_CODE', 'PC_NO', 'AC_NO', 'PC_TYPE', 'PC_NAME', 'AC_TYPE', 'AC_NAME', 'ST_NAME', 'AREA']
+with open('maps/metadata.csv', 'w') as fp:
+    out = csv.DictWriter(fp, fields, lineterminator='\n')
+    out.writerow({field:field for field in fields})
+    for p in properties:
+        out.writerow(p)
+
 EOF
 }
 
 
-topojson_pc
-topojson_ac
+# topojson_pc
+# topojson_ac
 topojson_meta
