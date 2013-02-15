@@ -1,9 +1,15 @@
-# Convert all PC shape files into topojson files
+# Convert shape files into other formats
 
 SOURCE=/d/site/gramener.com/viz/maps/data/india-constituencies/
 TOPOJSON=D:/node_modules/topojson/bin/topojson
 
-function pc {
+# The below paths are no longer used.
+# OGR2OGR=/c/Program\ Files\ \(x86\)/Quantum\ GIS\ Lisboa/bin/ogr2ogr.exe
+# GDAL_DATA='C:\Program Files (x86)\Quantum GIS Lisboa\share\gdal'
+# INKSCAPE=/d/Apps/Inkscape/App/Inkscape/inkscape.com
+
+# Create topojson files for Parliamentary constituences under maps/
+function topojson_pc {
     for shape in `find $SOURCE -name '*_PC.shp'`
     do
         SRC=`cygpath -aw $shape`
@@ -23,8 +29,9 @@ function pc {
     done
 }
 
-function ac {
-for shape in `find $SOURCE -name '*_AC.shp'`
+# Create topojson files for Assembly constituences under maps/
+function topojson_ac {
+    for shape in `find $SOURCE -name '*_AC.shp'`
     do
         SRC=`cygpath -aw $shape`
         OUT="maps/`basename $shape`"
@@ -43,7 +50,8 @@ for shape in `find $SOURCE -name '*_AC.shp'`
     done
 }
 
-function meta {
+# Create CSV metadata file for all topojson files under maps/
+function topojson_meta {
     python <<EOF
 import os
 import json
@@ -67,6 +75,7 @@ with open('maps/metadata.json', 'w') as fp:
 EOF
 }
 
-pc
-ac
-meta
+
+topojson_pc
+topojson_ac
+topojson_meta
