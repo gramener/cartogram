@@ -66,7 +66,7 @@
   var width = parseInt(svg.attr('width'));
   var height = parseInt(svg.attr('height'));
 
-  var projection = d3.geo.albers();
+  var projection = d3.geo.mercator();
   var path = d3.geo.path()
       .projection(projection);
 
