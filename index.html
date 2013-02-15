@@ -47,10 +47,22 @@
 <script src="cartogram.js"></script>
 <script>
 (function() {
-  d3.json('maps/metadata.json', function(json) {
+  d3.csv('maps/metadata.csv', function(csv) {
+    var data = d3.nest()
+        .key(function(d) { return d.filename; })
+        .entries(csv)
+        .map(function(d) {
+          return [d.key,
+            d.key
+              .replace(/[SU]\d\d_/, d.values[0].ST_NAME + " ")
+              .replace('.json', '')
+              .replace('_', ' ')
+          ]
+        });
+
     var select_map = d3.select('select[name="map"]');
     select_map.selectAll('option')
-        .data(json)
+        .data(data)
       .enter()
         .append('option')
         .attr('value', function(d) { return d[0]; })
