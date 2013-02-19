@@ -21,9 +21,9 @@
     <select name="map"></select>
     <select name="cartogram" class="input-medium">
       <optgroup label="Cartogram">
-        <option>Stretch</option>
-        <option>Circles (Dorling)</option>
-        <option>None</option>
+        <option value="none"      >None</option>
+        <option value="circles"   >Circles</option>
+        <option value="rectangles">Rectangles</option>
       </optgroup>
     </select>
     <select name="size" class="input-medium">
@@ -47,6 +47,12 @@
 <script src="cartogram.js"></script>
 <script>
 (function() {
+  var loadmaps = {
+    'none': loadmap_none,
+    'circles': loadmap_circles,
+    'rectangles': loadmap_rectangles
+  };
+
   d3.csv('maps/metadata.csv', function(csv) {
     var data = d3.nest()
         .key(function(d) { return d.filename; })
@@ -68,10 +74,13 @@
         .attr('value', function(d) { return d[0]; })
         .text(function(d) { return d[1]; });
 
-    select_map.on('change', function(d, i) {
+    function change_map(d, i) {
         var map = select_map.property('value');
-        d3.json('maps/' + map, loadmap);
-    }).on('change')();
+        var cartogram = d3.select('select[name="cartogram"]').property('value');
+        d3.json('maps/' + map, loadmaps[cartogram]);
+    }
+    d3.select('select[name="cartogram"]').on('change', change_map);
+    select_map.on('change', change_map).on('change')();
   });
 
   var svg = d3.select('svg.carto');
@@ -82,7 +91,7 @@
   var path = d3.geo.path()
       .projection(projection);
 
-  function loadmap(error, json) {
+  function loadmap_none(error, json) {
     var object = d3.values(json.objects)[0];
     var shape = topojson.object(json, object);
 
@@ -103,6 +112,13 @@
     svg.append('path')
         .datum(shape)
         .attr('d', path);
+  }
+
+  function loadmap_circles(error, json) {
+    alert('not implemented');
+  }
+  function loadmap_rectangles(error, json) {
+    alert('not implemented');
   }
 
 
