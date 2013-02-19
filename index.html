@@ -6,6 +6,7 @@
   <style>
   svg { border: 1px solid #ccc; }
   path { stroke: #fff; }
+  circle, rect { fill: #ccf; stroke: #00f;}
   </style>
 </head><body>
 
@@ -47,12 +48,6 @@
 <script src="cartogram.js"></script>
 <script>
 (function() {
-  var loadmaps = {
-    'none': loadmap_none,
-    'circles': loadmap_circles,
-    'rectangles': loadmap_rectangles
-  };
-
   d3.csv('maps/metadata.csv', function(csv) {
     var data = d3.nest()
         .key(function(d) { return d.filename; })
@@ -76,8 +71,7 @@
 
     function change_map(d, i) {
         var map = select_map.property('value');
-        var cartogram = d3.select('select[name="cartogram"]').property('value');
-        d3.json('maps/' + map, loadmaps[cartogram]);
+        d3.json('maps/' + map, loadmap);
     }
     d3.select('select[name="cartogram"]').on('change', change_map);
     select_map.on('change', change_map).on('change')();
@@ -91,7 +85,12 @@
   var path = d3.geo.path()
       .projection(projection);
 
-  function loadmap_none(error, json) {
+  var force = d3.layout.force()
+    .charge(0)
+    .gravity(0.01)
+    .size([width, height]);
+
+  function loadmap(error, json) {
     var object = d3.values(json.objects)[0];
     var shape = topojson.object(json, object);
 
@@ -109,16 +108,178 @@
         .translate(t);
 
     svg.selectAll('*').remove();
-    svg.append('path')
-        .datum(shape)
-        .attr('d', path);
+
+    var cartogram = d3.select('select[name="cartogram"]').property('value');
+    if (cartogram == 'none') {
+      svg.selectAll('path')
+          .data(shape.geometries)
+        .enter()
+          .append('path')
+          .attr('d', path)
+            .append('title')
+            .text(function(d) { return d3.values(d.properties)[2]; });
+    } else {
+      var nodes = shape.geometries.map(function(d) {
+        var centroid = path.centroid(d);
+        return (typeof centroid === 'undefined') ? {x:0, y:0} : {
+             x : centroid[0],
+             y : centroid[1],
+             x0: centroid[0],
+             y0: centroid[1],
+             r : Math.random() * 80
+        };
+      });
+
+      force
+        .nodes(nodes)
+        .on("tick", tick)
+        .start();
+
+      if (cartogram == 'circles') {
+        var element = 'circle',
+            xvar = 'cx',
+            yvar = 'cy',
+            sizes = ['r'];
+      } else if (cartogram == 'rectangles') {
+        var element = 'rect',
+            xvar = 'x',
+            yvar = 'y',
+            sizes = ['width', 'height'];
+      }
+
+      var elements = svg.selectAll(element)
+          .data(nodes)
+        .enter().append(element);
+      elements.attr(xvar, function(d) { return d.x; })
+      elements.attr(yvar, function(d) { return d.y; })
+      for (var i=0; i<sizes.length; i++) {
+        elements.attr(sizes[i], function(d) { return d.r; })
+      }
+
+      function tick(e) {
+        elements.each(gravity(e.alpha * .1))
+          .each(collide(.5))
+          .attr(xvar, function(d) { return d.x; })
+          .attr(yvar, function(d) { return d.y; });
+      }
+
+      function gravity(k) {
+        return function(d) {
+          d.x += (d.x0 - d.x) * k;
+          d.y += (d.y0 - d.y) * k;
+        };
+      }
+
+      function collide(k) {
+        var q = d3.geom.quadtree(nodes);
+        return function(node) {
+          var nr = node.r,
+              nx1 = node.x - nr,
+              nx2 = node.x + nr,
+              ny1 = node.y - nr,
+              ny2 = node.y + nr;
+          q.visit(function(quad, x1, y1, x2, y2) {
+            if (quad.point && (quad.point !== node)) {
+              var x = node.x - quad.point.x,
+                  y = node.y - quad.point.y,
+                  l = x * x + y * y,
+                  r = nr + quad.point.r;
+              if (l < r * r) {
+                l = ((l = Math.sqrt(l)) - r) / l * k;
+                node.x -= x *= l;
+                node.y -= y *= l;
+                quad.point.x += x;
+                quad.point.y += y;
+              }
+            }
+            return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+          });
+        };
+      }
+    }
   }
 
   function loadmap_circles(error, json) {
     alert('not implemented');
   }
+
   function loadmap_rectangles(error, json) {
-    alert('not implemented');
+      var object      = d3.values(json.objects)[0];
+      var shape       = topojson.object(json, object);
+      var bounds      = d3.geo.bounds(shape);
+      var projection  = d3.geo.albers()
+        .translate([parseInt(940)/2, parseInt(700)/2])
+        .parallels([bounds[0][1], bounds[1][1]])
+        .origin([(bounds[0][0] + bounds[1][0])/2, (bounds[0][1] + bounds[1][1])/2])
+        .scale(shapeinfo.scale);
+      var path        = d3.geo.path().projection(projection);
+
+      // From http://bl.ocks.org/mbostock/4055892
+      var nodes = shape.geometries.map(function(d) {
+        return {
+         'x'      : path.centroid(d)[0],
+         'y'      : path.centroid(d)[1],
+         'x0'     : path.centroid(d)[0],
+         'y0'     : path.centroid(d)[1],
+         'width'  : 40,
+         'height' : 40
+        }
+      });
+      force
+        .nodes(nodes)
+        .on("tick", tick)
+        .start();
+
+      var node = svg.selectAll("rect")
+        .data(nodes)
+      .enter().append("rect")
+        .attr("width", function(d) {
+          return d.width;
+        })
+        .attr("height", function(d) {
+          return d.height;
+        });
+
+      function tick(e) {
+        node.each(gravity(e.alpha * .1))
+          .each(collide(.5))
+          .attr("x", function(d) { return d.x; })
+          .attr("y", function(d) { return d.y; });
+      }
+
+      function gravity(k) {
+        return function(d) {
+          d.x += (d.x0 - d.x) * k;
+          d.y += (d.y0 - d.y) * k;
+        };
+      }
+
+      function collide(k) {
+        var q = d3.geom.quadtree(nodes);
+        return function(node) {
+          var nr = node.width,
+              nx1 = node.x - nr,
+              nx2 = node.x + nr,
+              ny1 = node.y - nr,
+              ny2 = node.y + nr;
+          q.visit(function(quad, x1, y1, x2, y2) {
+            if (quad.point && (quad.point !== node)) {
+              var x = node.x - quad.point.x,
+                  y = node.y - quad.point.y,
+                  l = x * x + y * y,
+                  r = nr + quad.point.width - 20;
+              if (l < r * r) {
+                l = ((l = Math.sqrt(l)) - r) / l * k;
+                node.x -= x *= l;
+                node.y -= y *= l;
+                quad.point.x += x;
+                quad.point.y += y;
+              }
+            }
+            return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+          });
+        };
+      }
   }
 
 
