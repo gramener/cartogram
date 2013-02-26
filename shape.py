@@ -1,4 +1,16 @@
-# -*- coding: utf8 -*-
+"""
+Create an Excel map from topojson files.
+
+Usage:
+
+    python shape.py file1.json file2.json ...
+
+TODO:
+- Account for non-unique districts (Aurangabad in Bihar & Maharashtra)
+- Account for shapes with holes (Outer Manipur)
+"""
+
+import sys
 import glob
 import math
 import json
@@ -10,11 +22,12 @@ msoFalse = 0
 msoTrue = -1
 ppLayoutBlank = 0xc
 msoThemeColorText1 = 13
+vbext_ct_StdModule = 1
 
 
 def projection(lon, lat):
     """Albers: http://mathworld.wolfram.com/AlbersEqual-AreaConicProjection.html"""
-    x0, y0 = 300, 230
+    x0, y0 = 600, 230
     size = 1500
     lon, lat = lon * math.pi / 180, lat * math.pi / 180
     # Origin of Cartesian coordinates
@@ -72,74 +85,48 @@ def draw(base, topo, key):
 
 
 Application = win32com.client.Dispatch("Excel.Application")
-Application.Visible = msoTrue
 Workbook = Application.Workbooks.Add()
 single_sheet = True
-row = 1
+new_sheet = True
+propcol = {}
+row = 2
 
-for filename in glob.glob('maps/S*_PC.json'):
-    key = lambda v: v['PC_NAME']
-    data = json.load(open(filename))
-    if single_sheet:
-        sheet = Workbook.ActiveSheet
-    else:
-        sheet = Workbook.Sheets.Add()
-        row = 1
+for pathspec in sys.argv[1:]:
+    for filename in glob.glob(pathspec):
+        print filename
+        key = lambda v: v['ST_CODE'] + ':' + v['PC_NAME'].title()
+        data = json.load(open(filename))
+        if single_sheet:
+            sheet = Workbook.ActiveSheet
+        else:
+            sheet = Workbook.Sheets.Add()
+            new_sheet = True
+            row = 2
 
-    for prop in draw(sheet, data, key):
-        sheet.Cells(row, 1).Value = 0
-        sheet.Cells(row, 2).Value = prop['ST_NAME']
-        sheet.Cells(row, 3).Value = key(prop)
-        row += 1
+        for prop in draw(sheet, data, key):
+            sheet.Cells(row, 1).Value = 0
+            sheet.Cells(1, 1).Value = 'Value'
+            for attr, val in prop.iteritems():
+                if attr not in propcol:
+                    propcol[attr] = len(propcol)
+                sheet.Cells(row, propcol[attr] + 2).Value = val
+            row += 1
 
-    if not single_sheet:
-        sheet.Name = prop['ST_NAME']
+        for attr, column in propcol.iteritems():
+            sheet.Cells(1, column + 2).Value = attr
 
+        if not single_sheet:
+            sheet.Name = key
 
-# Below is the Visual Basic code to be added to the Worksheet
-"""
-Private Sub Worksheet_Change(ByVal Target As Range)
-    Dim KeyCells As Range
+        if new_sheet:
+            new_sheet = False
+            # Add visual basic code. http://www.cpearson.com/excel/vbe.aspx
+            # Requires Excel modification: http://support.microsoft.com/kb/282830
+            vbproj = Workbook.VBProject
+            vbcomp = vbproj.VBComponents(sheet.Name)
+            codemod = vbcomp.CodeModule
+            for line, row in enumerate(open('shape.bas')):
+                codemod.InsertLines(line + 1, row)
 
-    ' The variable KeyCells contains the cells that will
-    ' cause an alert when they are changed.
-    Set KeyCells = Range("A:A")
+Application.Visible = msoTrue
 
-    If Not Application.Intersect(KeyCells, Range(Target.Address)) _
-           Is Nothing Then
-
-        For Each Cell In Target.Cells
-            Set Shape = ActiveSheet.Shapes(Cell.Offset(0, 2).value)
-            Shape.Fill.BackColor.RGB = Gradient(Cell.value)
-        Next
-
-    End If
-End Sub
-
-Public Function Gradient(value)
-    ' We'll always use a 3 point scale: 0, .5, 1
-    g = Array(Array(1, 0, 0), Array(1, 1, 0), Array(0, 1, 0))
-    Dim result As Variant
-
-    If value < 0 Then
-        result = g(0)
-    ElseIf value < 0.5 Then
-        a = g(0)
-        b = g(1)
-        q = 2 * value
-        p = 1 - q
-        result = Array(a(0) * p + b(0) * q, a(1) * p + b(1) * q, a(2) * p * b(2) * q)
-    ElseIf value <= 1# Then
-        a = g(1)
-        b = g(2)
-        q = 2 * (value - 0.5)
-        p = 1 - q
-        result = Array(a(0) * p + b(0) * q, a(1) * p + b(1) * q, a(2) * p * b(2) * q)
-    Else
-        result = g(2)
-    End If
-
-    Gradient = RGB(result(0) * 255, result(1) * 255, result(2) * 255)
-
-End Function
-"""
