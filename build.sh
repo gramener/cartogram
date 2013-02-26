@@ -23,7 +23,7 @@ function topojson_pc {
             -p PC_TYPE \
             -p AREA \
             --simplify-proportion 0.15 \
-            --quantization 2000 \
+            --quantization 10000 \
             --out $OUT \
             $SRC
     done
@@ -44,7 +44,7 @@ function topojson_ac {
             -p AC_TYPE \
             -p AREA \
             --simplify-proportion 0.15 \
-            --quantization 2000 \
+            --quantization 10000 \
             --out $OUT \
             $SRC
     done
