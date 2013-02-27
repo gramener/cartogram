@@ -100,9 +100,11 @@ def draw(base, topo, key):
 
 Application = win32com.client.Dispatch("Excel.Application")
 Workbook = Application.Workbooks.Add()
+Workbook.Sheets('Sheet2').Delete()
+Workbook.Sheets('Sheet3').Delete()
 single_sheet = True
 propcol = {}
-row = 2
+row = start_row = 4
 
 for pathspec in sys.argv[1:]:
     for filename in glob.glob(pathspec):
@@ -113,19 +115,19 @@ for pathspec in sys.argv[1:]:
             sheet = Workbook.ActiveSheet
         else:
             sheet = Workbook.Sheets.Add()
-            row = 2
+            row = start_row
 
         for prop in draw(sheet, data, key):
             sheet.Cells(row, 1).Value = 0
-            sheet.Cells(1, 1).Value = 'Value'
             for attr, val in prop.iteritems():
                 if attr not in propcol:
                     propcol[attr] = len(propcol)
                 sheet.Cells(row, propcol[attr] + 2).Value = val
             row += 1
 
+        sheet.Cells(start_row - 1, 1).Value = 'Value'
         for attr, column in propcol.iteritems():
-            sheet.Cells(1, column + 2).Value = attr
+            sheet.Cells(start_row - 1, column + 2).Value = attr
 
         if not single_sheet:
             sheet.Name = key
@@ -138,6 +140,14 @@ for sheet in Workbook.Worksheets:
     for line, row in enumerate(open('shape.bas')):
         codemod.InsertLines(line + 1, row)
 
+    # Set the gradient
+    sheet.Cells(1, 1).Value = 'Colors'
+    sheet.Cells(1, 2).Value = 0.0
+    sheet.Cells(1, 3).Value = 0.5
+    sheet.Cells(1, 4).Value = 1.0
+    sheet.Cells(1, 2).Interior.Color = 255     # Red
+    sheet.Cells(1, 3).Interior.Color = 65535   # Yellow
+    sheet.Cells(1, 4).Interior.Color = 5296274 # Green
 
 Application.Visible = msoTrue
 
