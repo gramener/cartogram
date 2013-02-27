@@ -6,8 +6,7 @@ Usage:
     python shape.py file1.json file2.json ...
 
 TODO:
-- Account for non-unique districts (Aurangabad in Bihar & Maharashtra)
-- Account for shapes with holes (Outer Manipur)
+- Account for shapes with holes (Outer Manipur in S14_PC.json)
 """
 
 import sys
@@ -22,13 +21,18 @@ msoFalse = 0
 msoTrue = -1
 ppLayoutBlank = 0xc
 msoThemeColorText1 = 13
+msoThemeColorBackground1 = 14
+msoThemeColorBackground2 = 16
 vbext_ct_StdModule = 1
 
 
 def projection(lon, lat):
     """Albers: http://mathworld.wolfram.com/AlbersEqual-AreaConicProjection.html"""
+
+    # The following are from trial and error, and work only for India
     x0, y0 = 600, 230
     size = 1500
+
     lon, lat = lon * math.pi / 180, lat * math.pi / 180
     # Origin of Cartesian coordinates
     phi0, lambda0 = 24 * math.pi / 180, 80 * math.pi / 180
@@ -65,21 +69,31 @@ def draw(base, topo, key):
 
     for shape in topo['objects'].values():
         for geom in shape['geometries']:
+            n_arcs = len(geom['arcs'])
+            name = key(geom['properties'])
+
             # Convert arcs of a geometry into array of points
-            points = []
-            for arcgroup in geom['arcs']:
+            for i, arcgroup in enumerate(geom['arcs']):
+                # Ignoring holes at the moment
+                points = []
                 for arc in arcgroup:
                     points += coords[arc] if arc >= 0 else coords[~arc][::-1]
 
-            # Draw the points
-            shape = base.Shapes.BuildFreeform(msoEditingAuto, *points[0])
-            for point in points[1:]:
-                shape.AddNodes(msoSegmentLine, msoEditingAuto, *point)
-            shape = shape.ConvertToShape()
-            shape.Name = key(geom['properties'])
-            shape.Fill.Visible = msoFalse
-            shape.Line.Weight = 0.25
-            shape.Line.ForeColor.ObjectThemeColor = msoThemeColorText1
+                # Draw the points
+                shape = base.Shapes.BuildFreeform(msoEditingAuto, *points[0])
+                for point in points[1:]:
+                    shape.AddNodes(msoSegmentLine, msoEditingAuto, *point)
+                shape = shape.ConvertToShape()
+                shape.Line.Weight = 0.25
+                shape.Line.ForeColor.ObjectThemeColor = msoThemeColorBackground1
+                shape.Fill.ForeColor.ObjectThemeColor = msoThemeColorBackground2
+
+                shape.Name = name if n_arcs == 1 else name + str(i)
+
+            # Group shapes if required
+            if n_arcs > 1:
+                shape = base.Shapes.Range([name + str(i) for i in range(n_arcs)]).Group()
+                shape.Name = name
 
             yield geom['properties']
 
@@ -87,7 +101,6 @@ def draw(base, topo, key):
 Application = win32com.client.Dispatch("Excel.Application")
 Workbook = Application.Workbooks.Add()
 single_sheet = True
-new_sheet = True
 propcol = {}
 row = 2
 
@@ -100,7 +113,6 @@ for pathspec in sys.argv[1:]:
             sheet = Workbook.ActiveSheet
         else:
             sheet = Workbook.Sheets.Add()
-            new_sheet = True
             row = 2
 
         for prop in draw(sheet, data, key):
@@ -118,15 +130,14 @@ for pathspec in sys.argv[1:]:
         if not single_sheet:
             sheet.Name = key
 
-        if new_sheet:
-            new_sheet = False
-            # Add visual basic code. http://www.cpearson.com/excel/vbe.aspx
-            # Requires Excel modification: http://support.microsoft.com/kb/282830
-            vbproj = Workbook.VBProject
-            vbcomp = vbproj.VBComponents(sheet.Name)
-            codemod = vbcomp.CodeModule
-            for line, row in enumerate(open('shape.bas')):
-                codemod.InsertLines(line + 1, row)
+# Add visual basic code. http://www.cpearson.com/excel/vbe.aspx
+# Requires Excel modification: http://support.microsoft.com/kb/282830
+vbproj = Workbook.VBProject
+for sheet in Workbook.Worksheets:
+    codemod = vbproj.VBComponents(sheet.Name).CodeModule
+    for line, row in enumerate(open('shape.bas')):
+        codemod.InsertLines(line + 1, row)
+
 
 Application.Visible = msoTrue
 
