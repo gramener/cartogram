@@ -29,10 +29,6 @@ vbext_ct_StdModule = 1
 def projection(lon, lat):
     """Albers: http://mathworld.wolfram.com/AlbersEqual-AreaConicProjection.html"""
 
-    # The following are from trial and error, and work only for India
-    x0, y0 = 600, 230
-    size = 1500
-
     lon, lat = lon * math.pi / 180, lat * math.pi / 180
     # Origin of Cartesian coordinates
     phi0, lambda0 = 24 * math.pi / 180, 80 * math.pi / 180
@@ -45,7 +41,7 @@ def projection(lon, lat):
     rho = ((C - 2 * n * math.sin(lat)) / n) ** .5
     rho0 = ((C - 2 * n * math.sin(phi0)) / n) ** .5
     x, y = rho * math.sin(theta), rho0 - rho * math.cos(theta)
-    return x0 + x * size, y0 - y * size
+    return x, -y
 
 def draw(base, topo, key):
     # Convert arcs into absolute positions
@@ -66,6 +62,20 @@ def draw(base, topo, key):
             projection(x * sx + tx, y * sy + ty)
             for x, y in points
         ])
+
+    # The following are from trial and error, and work only for India
+    vx = [x for points in coords for x, y in points]
+    vy = [y for points in coords for x, y in points]
+    minx, miny = min(vx), min(vy)
+    maxx, maxy = max(vx), max(vy)
+    dx, dy = maxx - minx, maxy - miny
+
+    # We want the map in a 400x400 bounding box at 400, 20
+    x0, y0 = 400, 20
+    size = min(400 / dx, 400 / dy)
+
+    for i, points in enumerate(coords):
+        coords[i] = [(x0 + (x - minx) * size, y0 + (y - miny) * size) for x, y in points]
 
     for shape in topo['objects'].values():
         for geom in shape['geometries']:
