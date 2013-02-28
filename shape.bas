@@ -5,6 +5,17 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     ' cause an alert when they are changed.
     Set KeyCells = Range("A:A")
 
+    ' Get the range of colors for up to 25 cells (B-Z)
+    Dim g(0 To 25)
+    Dim v(0 To 25)
+    For Each Cell In Range("B1:Z1")
+        If Cell.value <> "" Then
+            v(Cell.Column - 2) = Cell.value
+            g(Cell.Column - 2) = RGBval(Cell)
+            n = Cell.Column - 1
+        End If
+    Next
+
     If Not Application.Intersect(KeyCells, Range(Target.Address)) _
            Is Nothing Then
 
@@ -13,7 +24,7 @@ Private Sub Worksheet_Change(ByVal Target As Range)
             If ShapeName <> ":" Then
                 Set Shape = ActiveSheet.Shapes(ShapeName)
                 With Shape.Fill
-                    .ForeColor.RGB = Gradient(Cell.value)
+                    .ForeColor.RGB = Gradient(Cell.value, g, v, n)
                     .Visible = msoTrue
                     .Transparency = 0
                     .Solid
@@ -25,33 +36,34 @@ Private Sub Worksheet_Change(ByVal Target As Range)
 End Sub
 
 
-Public Function Gradient(value)
+Public Function Gradient(value, g, v, n)
     ' We'll always use a 3 value scale
-    g = Array(RGBval(Range("B1")), RGBval(Range("C1")), RGBval(Range("D1")))
-    v = Array(Range("B1").Value, Range("C1").Value, Range("D1").Value)
+    ' g = Array(RGBval(Range("B1")), RGBval(Range("C1")), RGBval(Range("D1")))
+    ' v = Array(Range("B1").value, Range("C1").value, Range("D1").value)
+    ' n = 3
     Dim result As Variant
 
     If value < v(0) Then
         result = g(0)
-    ElseIf value < v(1) Then
-        a = g(0)
-        b = g(1)
-        q = (value - v(0)) / (v(1) - v(0))
-        p = 1 - q
-        result = Array(a(0) * p + b(0) * q, a(1) * p + b(1) * q, a(2) * p + b(2) * q)
-    ElseIf value <= v(2) Then
-        a = g(1)
-        b = g(2)
-        q = (value - v(1)) / (v(2) - v(1))
-        p = 1 - q
-        result = Array(a(0) * p + b(0) * q, a(1) * p + b(1) * q, a(2) * p + b(2) * q)
+    ElseIf value >= v(n - 1) Then
+        result = g(n - 1)
     Else
-        result = g(2)
+        i = 1
+        While value >= v(i)
+            i = i + 1
+        Wend
+        a = g(i - 1)
+        b = g(i)
+        If value = v(i) Then
+            q = 1
+        ElseIf value = v(i - 1) Then
+            q = 0
+        Else
+            q = (value - v(i - 1)) / (v(i) - v(i - 1))
+        End If
+        p = 1 - q
+        result = Array(a(0) * p + b(0) * q, a(1) * p + b(1) * q, a(2) * p + b(2) * q)
     End If
-
-    If result(0) < 0 Then result(0) = 0
-    If result(1) < 0 Then result(1) = 0
-    If result(2) < 0 Then result(2) = 0
 
     Gradient = RGB(result(0) * 255, result(1) * 255, result(2) * 255)
 End Function
