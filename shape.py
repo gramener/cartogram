@@ -86,7 +86,6 @@ def draw(base, topo, key):
                 shape = shape.ConvertToShape()
                 shape.Line.Weight = 0.25
                 shape.Line.ForeColor.ObjectThemeColor = msoThemeColorBackground1
-                shape.Fill.ForeColor.ObjectThemeColor = msoThemeColorBackground2
 
                 shape.Name = name if n_arcs == 1 else name + str(i)
 
