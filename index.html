@@ -126,7 +126,7 @@
              y : centroid[1],
              x0: centroid[0],
              y0: centroid[1],
-             r : Math.random() * 80
+             r : 4
         };
       });
 
@@ -155,6 +155,11 @@
       for (var i=0; i<sizes.length; i++) {
         elements.attr(sizes[i], function(d) { return d.r; })
       }
+      elements.append('title')
+        .text(function(d) {
+            var p = shape.geometries[d.index].properties;
+            return p.ST_NAME + ': ' + p.PC_NAME;
+        });
 
       function tick(e) {
         elements.each(gravity(e.alpha * .1))
