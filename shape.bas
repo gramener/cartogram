@@ -5,10 +5,10 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     ' cause an alert when they are changed.
     Set KeyCells = Range("A:A")
 
-    ' Get the range of colors for up to 25 cells (B-Z)
-    Dim g(0 To 25)
-    Dim v(0 To 25)
-    For Each Cell In Range("B1:Z1")
+    ' Get the range of colors for up to 255 cells (B-IV)
+    Dim g(0 To 255)
+    Dim v(0 To 255)
+    For Each Cell In Range("B1:IV1")
         If Cell.value <> "" Then
             v(Cell.Column - 2) = Cell.value
             g(Cell.Column - 2) = RGBval(Cell)
