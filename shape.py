@@ -9,6 +9,7 @@ TODO:
 - Account for shapes with holes (Outer Manipur in S14_PC.json)
 """
 
+import os
 import sys
 import glob
 import math
@@ -111,14 +112,15 @@ Application = win32com.client.Dispatch("Excel.Application")
 Workbook = Application.Workbooks.Add()
 Workbook.Sheets('Sheet2').Delete()
 Workbook.Sheets('Sheet3').Delete()
-single_sheet = True
-propcol = {}
+
+single_sheet = False
+keycols = ['ST_CODE', 'PC_NAME']
+propcol = {key:i for i, key in enumerate(keycols)}
 row = start_row = 4
 
 for pathspec in sys.argv[1:]:
     for filename in glob.glob(pathspec):
-        print filename
-        key = lambda v: v['ST_CODE'] + ':' + v['PC_NAME'].title()
+        sys.stdout.write(filename)
         data = json.load(open(filename))
         if single_sheet:
             sheet = Workbook.ActiveSheet
@@ -126,6 +128,7 @@ for pathspec in sys.argv[1:]:
             sheet = Workbook.Sheets.Add()
             row = start_row
 
+        key = lambda v: ':'.join(v[k] for k in keycols).title()
         for prop in draw(sheet, data, key):
             sheet.Cells(row, 1).Value = 0
             for attr, val in prop.iteritems():
@@ -133,13 +136,16 @@ for pathspec in sys.argv[1:]:
                     propcol[attr] = len(propcol)
                 sheet.Cells(row, propcol[attr] + 2).Value = val
             row += 1
+            sys.stdout.write('.')
 
         sheet.Cells(start_row - 1, 1).Value = 'Value'
         for attr, column in propcol.iteritems():
             sheet.Cells(start_row - 1, column + 2).Value = attr
 
         if not single_sheet:
-            sheet.Name = key
+            sheet.Name = os.path.splitext(os.path.basename(filename))[0]
+
+    sys.stdout.write('\n')
 
 # Add visual basic code. http://www.cpearson.com/excel/vbe.aspx
 # Requires Excel modification: http://support.microsoft.com/kb/282830
@@ -154,9 +160,9 @@ for sheet in Workbook.Worksheets:
     sheet.Cells(1, 2).Value = 0.0
     sheet.Cells(1, 3).Value = 0.5
     sheet.Cells(1, 4).Value = 1.0
-    sheet.Cells(1, 2).Interior.Color = 255     # Red
-    sheet.Cells(1, 3).Interior.Color = 65535   # Yellow
-    sheet.Cells(1, 4).Interior.Color = 5296274 # Green
+    sheet.Cells(1, 2).Interior.Color = 255      # Red
+    sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
+    sheet.Cells(1, 4).Interior.Color = 5296274  # Green
 
 Application.Visible = msoTrue
 

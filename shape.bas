@@ -20,7 +20,7 @@ Private Sub Worksheet_Change(ByVal Target As Range)
            Is Nothing Then
 
         For Each Cell In Target.Cells
-            ShapeName = Cell.Offset(0, 2).value & ":" & Cell.Offset(0, 4).value
+            ShapeName = Cell.Offset(0, 1).value & ":" & Cell.Offset(0, 2).value
             If ShapeName <> ":" Then
                 Set Shape = ActiveSheet.Shapes(ShapeName)
                 With Shape.Fill
