@@ -5,19 +5,19 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     ' cause an alert when they are changed.
     Set KeyCells = Range("A:A")
 
-    ' Get the range of colors for up to 255 cells (B-IV)
-    Dim g(0 To 255)
-    Dim v(0 To 255)
-    For Each Cell In Range("B1:IV1")
-        If Cell.value <> "" Then
-            v(Cell.Column - 2) = Cell.value
-            g(Cell.Column - 2) = RGBval(Cell)
-            n = Cell.Column - 1
-        End If
-    Next
-
     If Not Application.Intersect(KeyCells, Range(Target.Address)) _
            Is Nothing Then
+
+        ' Get the range of colors for up to 255 cells (B-IV)
+        Dim g(0 To 255)
+        Dim v(0 To 255)
+        For Each Cell In Range("B1:IV1")
+            If Cell.value <> "" Then
+                v(Cell.Column - 2) = Cell.value
+                g(Cell.Column - 2) = RGBval(Cell)
+                n = Cell.Column - 1
+            End If
+        Next
 
         For Each Cell In Target.Cells
             ShapeName = Cell.Offset(0, 1).value & ":" & Cell.Offset(0, 2).value
