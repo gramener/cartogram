@@ -48,7 +48,7 @@
 
       // path with identity projection
       var path = d3.geo.path()
-        .projection(ident);
+        .projection(null);
 
       var objects = object(projectedArcs, {type: "GeometryCollection", geometries: geometries})
           .geometries.map(function(geom) {
@@ -159,7 +159,7 @@
 
     // for convenience
     carto.path = d3.geo.path()
-      .projection(ident);
+      .projection(null);
 
     carto.iterations = function(i) {
       if (arguments.length) {
@@ -278,11 +278,6 @@
     };
   }
 
-  // identity projection
-  function ident(c) {
-    return c;
-  }
-
   function copy(o) {
     return (o instanceof Array)
       ? o.map(copy)
@@ -290,7 +285,7 @@
         ? o
         : copyObject(o);
   }
-
+  
   function copyObject(o) {
     var obj = {};
     for (var k in o) obj[k] = copy(o[k]);
