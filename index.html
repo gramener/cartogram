@@ -25,6 +25,7 @@
         <option value="none"      >None</option>
         <option value="circles"   >Circles</option>
         <option value="rectangles">Rectangles</option>
+        <option value="distortion">Distortion</option>
       </optgroup>
     </select>
     <select name="size" class="input-medium">
@@ -110,6 +111,7 @@
     svg.selectAll('*').remove();
 
     var cartogram = d3.select('select[name="cartogram"]').property('value');
+
     if (cartogram == 'none') {
       svg.selectAll('path')
           .data(shape.geometries)
@@ -118,7 +120,20 @@
           .attr('d', path)
             .append('title')
             .text(function(d) { return d3.values(d.properties)[2]; });
-    } else {
+    } else if (cartogram == 'distortion') {
+      var carto = d3.cartogram()
+        .projection(projection)
+        .value(function() {
+          return Math.random() * 100;
+        })
+      var features = carto(json, d3.values(json.objects)[0].geometries).features;
+      svg.selectAll('path')
+          .data(features)
+        .enter()
+        .append('path')
+          .attr('d', carto.path)
+    }
+    else {
       var nodes = shape.geometries.map(function(d) {
         var centroid = path.centroid(d);
         return (typeof centroid === 'undefined') ? {x:0, y:0} : {
