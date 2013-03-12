@@ -126,7 +126,7 @@
         .value(function() {
           return Math.random() * 100;
         })
-      var features = carto(json, d3.values(json.objects)[0].geometries).features;
+      var features = carto(json, shape.geometries).features;
       svg.selectAll('path')
           .data(features)
         .enter()
