@@ -30,12 +30,10 @@
     </select>
     <select name="filename" class="input-medium">
       <optgroup label="Filename">
-        <option>...</option>
       </optgroup>
     </select>
     <select name="size" class="input-medium">
       <optgroup label="Size">
-        <option>...</option>
       </optgroup>
     </select>
     <select name="color" class="input-medium">
@@ -54,6 +52,26 @@
 <script src="cartogram.js"></script>
 <script>
 (function() {
+
+  var filename = 'data.csv';
+  d3.csv('maps/'+ filename, function(csv) {
+    var fields = d3.keys(csv[0]);
+    d3.select('select[name="size"] optgroup').selectAll('option')
+      .data(fields)
+      .enter()
+        .append('option')
+        .text(function(d) {
+          return d;
+        });
+
+    d3.selectAll('select[name="filename"] optgroup')
+      .append('option')
+      .attr('value', filename)
+      .text(filename);
+
+  });
+
+
   d3.csv('maps/metadata.csv', function(csv) {
     var data = d3.nest()
         .key(function(d) { return d.filename; })
