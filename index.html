@@ -137,6 +137,11 @@
         .enter()
         .append('path')
           .attr('d', carto.path)
+            .append('title')
+            .text(function(d, i) {
+              var p = shape.geometries[i].properties;
+              return p.PC_NAME || p.AC_NAME;
+            });
     }
     else {
       var nodes = shape.geometries.map(function(d) {
