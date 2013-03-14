@@ -52,20 +52,15 @@ function topojson_ac {
 
 # Create topojson files for administrative boundaries under maps/
 function topojson_adm {
-    for shape in `find $SOURCE -name '*_PC.shp'`
+    for shape in `find $SOURCE -name 'IND_adm*.shp'`
     do
         SRC=`cygpath -aw $shape`
         OUT="maps/`basename $shape`"
         OUT="${OUT%.*}".json
         node $TOPOJSON \
-            -p ST_CODE \
-            -p PC_NO \
-            -p ST_NAME \
-            -p PC_NAME \
-            -p PC_TYPE \
-            -p AREA \
+            -p \
             --simplify-proportion 0.15 \
-            --quantization 2000 \
+            --quantization 10000 \
             --out $OUT \
             $SRC
     done
@@ -108,4 +103,5 @@ EOF
 
 topojson_pc
 topojson_ac
+topojson_adm
 topojson_meta
