@@ -3,6 +3,9 @@
 SOURCE=/d/site/gramener.com/viz/maps/data/
 TOPOJSON=D:/node_modules/topojson/bin/topojson
 
+# Huge SHP files require more memory from node.js
+# OPTIONS=--max_old_space_size=900
+
 # The below paths are no longer used.
 # OGR2OGR=/c/Program\ Files\ \(x86\)/Quantum\ GIS\ Lisboa/bin/ogr2ogr.exe
 # GDAL_DATA='C:\Program Files (x86)\Quantum GIS Lisboa\share\gdal'
@@ -15,7 +18,7 @@ function topojson_pc {
         SRC=`cygpath -aw $shape`
         OUT="maps/`basename $shape`"
         OUT="${OUT%.*}".json
-        node $TOPOJSON \
+        node $OPTIONS $TOPOJSON \
             -p ST_CODE \
             -p PC_NO \
             -p ST_NAME \
@@ -36,7 +39,7 @@ function topojson_ac {
         SRC=`cygpath -aw $shape`
         OUT="maps/`basename $shape`"
         OUT="${OUT%.*}".json
-        node $TOPOJSON \
+        node $OPTIONS $TOPOJSON \
             -p ST_CODE \
             -p PC_NO \
             -p AC_NO \
@@ -57,7 +60,7 @@ function topojson_adm {
         SRC=`cygpath -aw $shape`
         OUT="maps/`basename $shape`"
         OUT="${OUT%.*}".json
-        node $TOPOJSON \
+        node $OPTIONS $TOPOJSON \
             -p \
             --simplify-proportion 0.15 \
             --quantization 10000 \
