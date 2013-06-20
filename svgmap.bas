@@ -18,7 +18,7 @@ Private Sub Worksheet_Change(ByVal Target As Range)
 
         ' Ensure file expires
         Dim Expires As Date
-        Expires = #EXPIRYDATE#
+        Expires = #01/01/2013#
         If Now > Expires Then
             MsgBox "This license expired on " & Expires
             Exit Sub
@@ -103,3 +103,7 @@ Public Function RGBval(Cell)
     r = c - g * 256
     RGBval = Array(r / 255, g / 255, b / 255)
 End Function
+
+Sub Filter()
+    MsgBox "In Filter"
+End Sub

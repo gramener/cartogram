@@ -1,12 +1,18 @@
 """
-Usage: python32 svgmap.py d:/site/gramener.com/www/src/indiamap/india-states.svg
+Creates an Excel map application given an SVG map.
 """
 
-import sys
+import argparse
 import color as _color
 import win32com.client
 from MSO import *
 from svg2mso import svg2mso
+
+parser = argparse.ArgumentParser(description=__doc__.strip())
+parser.add_argument('svgfile')
+parser.add_argument('-l', '--license', help='motherboard id')
+parser.add_argument('-e', '--expiry', help='mm/dd/yyyy')
+args = parser.parse_args()
 
 Application = win32com.client.Dispatch("Excel.Application")
 Application.Visible = msoTrue
@@ -35,10 +41,7 @@ def callback(e, shape):
     Base.Cells(2 + len(shapes), 1).Value = 0
     Base.Cells(2 + len(shapes), 2).Value = shape.name = name
 
-license = raw_input('motherboard id: ')
-expiry = raw_input('expiry (mm/dd/yyyy): ')
-
-svg = open(sys.argv[1]).read()
+svg = open(args.svgfile).read()
 svg2mso(Base, svg, callback=callback)
 
 # Set the gradient
@@ -50,10 +53,17 @@ Base.Cells(1, 2).Interior.Color = 255      # Red
 Base.Cells(1, 3).Interior.Color = 65535    # Yellow
 Base.Cells(1, 4).Interior.Color = 5296274  # Green
 
+button = Base.Buttons().Add(332, 0, 48, 14.4)
+button.OnAction = "Sheet1.Filter"
+button.Characters.Text = "Filter"
+
 vbproj = Workbook.VBProject
 codemod = vbproj.VBComponents('Sheet1').CodeModule
-for line, row in enumerate(open('svgmap.bas')):
-    codemod.InsertLines(
-        line + 1,
-        row.replace('LICENSEKEY', license).replace('EXPIRYDATE', expiry)
-    )
+source = open('svgmap.bas').read()
+if args.license:
+    source = source.replace('LICENSEKEY', args.license)
+if args.expiry:
+    source = source.replace('01/01/2013', args.expiry)
+
+for line, row in enumerate(source.split('\n')):
+    codemod.InsertLines(line + 1, row)
