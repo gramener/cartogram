@@ -105,5 +105,14 @@ Public Function RGBval(Cell)
 End Function
 
 Sub Filter()
-    MsgBox "In Filter"
+    s = LCase(InputBox("Type in the regions to select", "Filter"))
+    If Len(s) = 0 Then
+        Exit Sub
+    End If
+    For Each shp In ActiveSheet.Shapes
+        ' Type 5 = msoFreeform. Type 6 = msoGroup. Ignore buttons, etc.
+        If (shp.Type = 5 Or shp.Type = 6) And InStr(LCase(shp.Name), s) > 0 Then
+            shp.Select (False)
+        End If
+    Next
 End Sub
