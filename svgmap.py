@@ -1,5 +1,5 @@
 """
-Usage: python32 svgmap.py d:/site/gramener.com/www/src/indiamap/india-states.svg UNID
+Usage: python32 svgmap.py d:/site/gramener.com/www/src/indiamap/india-states.svg
 """
 
 import sys
@@ -35,8 +35,11 @@ def callback(e, shape):
     Base.Cells(2 + len(shapes), 1).Value = 0
     Base.Cells(2 + len(shapes), 2).Value = shape.name = name
 
-vbscript = open(sys.argv[1]).read()
-svg2mso(Base, vbscript, callback=callback)
+license = raw_input('motherboard id: ')
+expiry = raw_input('expiry (mm/dd/yyyy): ')
+
+svg = open(sys.argv[1]).read()
+svg2mso(Base, svg, callback=callback)
 
 # Set the gradient
 Base.Cells(1, 1).Value = 'Colors'
@@ -50,5 +53,7 @@ Base.Cells(1, 4).Interior.Color = 5296274  # Green
 vbproj = Workbook.VBProject
 codemod = vbproj.VBComponents('Sheet1').CodeModule
 for line, row in enumerate(open('svgmap.bas')):
-    codemod.InsertLines(line + 1, row.replace('LICENSEKEY', sys.argv[2]))
-    
+    codemod.InsertLines(
+        line + 1,
+        row.replace('LICENSEKEY', license).replace('EXPIRYDATE', expiry)
+    )

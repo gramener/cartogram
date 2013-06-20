@@ -16,6 +16,14 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     If Not Application.Intersect(KeyCells, Range(Target.Address)) _
            Is Nothing Then
 
+        ' Ensure file expires
+        Dim Expires As Date
+        Expires = #EXPIRYDATE#
+        If Now > Expires Then
+            MsgBox "This license expired on " & Expires
+            Exit Sub
+        End If
+
         ' Validate the UNID
         LicenseKey = "LICENSEKEY"
         ID = UNID()
