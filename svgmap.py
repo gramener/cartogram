@@ -38,8 +38,11 @@ def callback(e, shape):
     shape.Fill.Visible = msoTrue
     shapes.append(shape)
     name = ':'.join(reversed(list(titles(e))))
-    Base.Cells(2 + len(shapes), 1).Value = 0
-    Base.Cells(2 + len(shapes), 2).Value = shape.name = name
+    n = len(shapes)
+    if not name:
+        name = 'Shape%04d' % n
+    Base.Cells(2 + n, 1).Value = 0
+    Base.Cells(2 + n, 2).Value = shape.Name = name
 
 svg = open(args.svgfile).read()
 svg2mso(Base, svg, callback=callback)
