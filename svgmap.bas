@@ -116,3 +116,9 @@ Sub Filter()
         End If
     Next
 End Sub
+
+Sub Refresh()
+    Dim LR As String
+    LR = Cells(Rows.Count, "A").End(xlUp).Row
+    Call Worksheet_Change(Range("A2:A" & LR))
+End Sub
