@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(description=__doc__.strip())
 parser.add_argument('svgfile')
 parser.add_argument('-l', '--license', help='motherboard id')
 parser.add_argument('-e', '--expiry', help='mm/dd/yyyy')
+parser.add_argument('-a', '--attr', help='attribute to take ID from', default='title')
 args = parser.parse_args()
 
 Application = win32com.client.Dispatch("Excel.Application")
@@ -25,7 +26,7 @@ Base = Workbook.Sheets('Map')
 
 def titles(e):
     while True:
-        title = e.get('title')
+        title = e.get(args.attr)
         if title is not None:
             yield title
             e = e.getparent()
