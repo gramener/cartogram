@@ -61,7 +61,7 @@ button = Base.Buttons().Add(332, 0, 48, 14.4)
 button.OnAction = "Sheet1.Filter"
 button.Characters.Text = "Filter"
 
-button = Base.Buttons().Add(432, 0, 48, 14.4)
+button = Base.Buttons().Add(384, 0, 48, 14.4)
 button.OnAction = "Sheet1.Refresh"
 button.Characters.Text = "Refresh"
 
