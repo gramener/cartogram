@@ -47,6 +47,7 @@ Private Sub Worksheet_Change(ByVal Target As Range)
         For Each Cell In Target.Cells
             ShapeName = Cell.Offset(0, 1).value
             If ShapeName <> "" Then
+                On Error GoTo IgnoreMissingNames
                 Set Shape = ActiveSheet.Shapes(ShapeName)
                 With Shape.Fill
                     .ForeColor.RGB = Gradient(Cell.value, g, v, n)
@@ -54,6 +55,8 @@ Private Sub Worksheet_Change(ByVal Target As Range)
                     .Transparency = 0
                     .Solid
                 End With
+IgnoreMissingNames:
+                On Error GoTo -1
             End If
         Next
 
