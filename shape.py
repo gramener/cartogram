@@ -8,6 +8,7 @@ Usage:
 TODO:
 - Account for shapes with holes (Outer Manipur in S14_PC.json)
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -122,7 +123,7 @@ row = start_row = 4
 
 for pathspec in sys.argv[1:]:
     for filename in glob.glob(pathspec):
-        sys.stdout.write(filename)
+        print(filename)
         data = json.load(open(filename))
         if single_sheet:
             sheet = Workbook.ActiveSheet
