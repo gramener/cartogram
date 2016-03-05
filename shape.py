@@ -81,7 +81,8 @@ def draw(base, topo, key):
     for shape in topo['objects'].values():
         for geom in shape['geometries']:
             n_arcs = len(geom['arcs'])
-            name = key(geom['properties'])
+            properties = geom.get('properties', {})
+            name = key(properties)
 
             # Convert arcs of a geometry into array of points
             for i, arcgroup in enumerate(geom['arcs']):
@@ -105,7 +106,7 @@ def draw(base, topo, key):
                 shape = base.Shapes.Range([name + str(i) for i in range(n_arcs)]).Group()
                 shape.Name = name
 
-            yield geom['properties']
+            yield properties
 
 
 Application = win32com.client.Dispatch("Excel.Application")
@@ -129,7 +130,7 @@ for pathspec in sys.argv[1:]:
             sheet = Workbook.Sheets.Add()
             row = start_row
 
-        key = lambda v: ':'.join(v[k] for k in keycols).title()
+        key = lambda v: ':'.join(v.get(k, '') for k in keycols).title()
         for prop in draw(sheet, data, key):
             sheet.Cells(row, 1).Value = 0
             for attr, val in prop.iteritems():
