@@ -87,9 +87,12 @@ def draw(base, topo, key):
 
             # Convert arcs of a geometry into array of points
             for i, arcgroup in enumerate(geom['arcs']):
-                # Ignoring holes at the moment
+                # Consolidate shapes into a point list. Ignore holes
                 points = []
                 for arc in arcgroup:
+                    # arc is an index into point coords. Positive values go
+                    # clockwise. Else, it's two's complement (~) goes anti-
+                    # clockwise.
                     points += coords[arc] if arc >= 0 else coords[~arc][::-1]
 
                 # Draw the points
@@ -152,6 +155,7 @@ for pathspec in sys.argv[1:]:
 
 # Add visual basic code. http://www.cpearson.com/excel/vbe.aspx
 # Requires Excel modification: http://support.microsoft.com/kb/282830
+# to resolve error 'Programmatic Access to Visual Basic Project is not trusted'
 vbproj = Workbook.VBProject
 for sheet in Workbook.Worksheets:
     codemod = vbproj.VBComponents(sheet.Name).CodeModule
