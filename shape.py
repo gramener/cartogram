@@ -110,8 +110,9 @@ def draw(base, topo, key):
 
 Application = win32com.client.Dispatch("Excel.Application")
 Workbook = Application.Workbooks.Add()
-Workbook.Sheets('Sheet2').Delete()
-Workbook.Sheets('Sheet3').Delete()
+# In Excel 2007 / 2010, Excel files have multiple sheets. Remove all but first
+for sheet in range(1, len(Workbook.Sheets)):
+    Workbook.Sheets[1].Delete()
 
 single_sheet = True
 keycols = ['ST_CODE', 'PC_NAME']
