@@ -39,11 +39,12 @@ def projection(lon, lat):
 
     n = .5 * (math.sin(phi1) + math.sin(phi2))
     theta = n * (lon - lambda0)
-    C = math.cos(phi1) ** 2 + 2 * n * math.sin(phi1)
-    rho = ((C - 2 * n * math.sin(lat)) / n) ** .5
-    rho0 = ((C - 2 * n * math.sin(phi0)) / n) ** .5
+    c = math.cos(phi1) ** 2 + 2 * n * math.sin(phi1)
+    rho = ((c - 2 * n * math.sin(lat)) / n) ** .5
+    rho0 = ((c - 2 * n * math.sin(phi0)) / n) ** .5
     x, y = rho * math.sin(theta), rho0 - rho * math.cos(theta)
     return x, -y
+
 
 def draw(base, topo, key):
     # Convert arcs into absolute positions
@@ -61,13 +62,13 @@ def draw(base, topo, key):
 
         # Convert into lat-long, then project it
         coords.append([
-            projection(x * sx + tx, y * sy + ty)
-            for x, y in points
+            projection(px * sx + tx, py * sy + ty)
+            for px, py in points
         ])
 
     # The following are from trial and error, and work only for India
-    vx = [x for points in coords for x, y in points]
-    vy = [y for points in coords for x, y in points]
+    vx = [px for pointlist in coords for px, py in pointlist]
+    vy = [py for pointlist in coords for px, py in pointlist]
     minx, miny = min(vx), min(vy)
     maxx, maxy = max(vx), max(vy)
     dx, dy = maxx - minx, maxy - miny
@@ -77,7 +78,7 @@ def draw(base, topo, key):
     size = min(400 / dx, 400 / dy)
 
     for i, points in enumerate(coords):
-        coords[i] = [(x0 + (x - minx) * size, y0 + (y - miny) * size) for x, y in points]
+        coords[i] = [(x0 + (px - minx) * size, y0 + (py - miny) * size) for px, py in points]
 
     for shape in topo['objects'].values():
         for geom in shape['geometries']:
@@ -121,8 +122,14 @@ for sheet in range(1, len(Workbook.Sheets)):
 
 single_sheet = True
 keycols = ['ST_CODE', 'PC_NAME']
-propcol = {key:i for i, key in enumerate(keycols)}
+propcol = {key: i for i, key in enumerate(keycols)}
 row = start_row = 4
+
+
+def key(properties):
+    'Create a key by joining key columns from properties'
+    return ':'.join(properties.get(k, '') for k in keycols).title()
+
 
 for pathspec in sys.argv[1:]:
     for filename in glob.glob(pathspec):
@@ -134,7 +141,6 @@ for pathspec in sys.argv[1:]:
             sheet = Workbook.Sheets.Add()
             row = start_row
 
-        key = lambda v: ':'.join(v.get(k, '') for k in keycols).title()
         for prop in draw(sheet, data, key):
             sheet.Cells(row, 1).Value = 0
             for attr, val in prop.iteritems():
@@ -172,4 +178,3 @@ for sheet in Workbook.Worksheets:
     sheet.Cells(1, 4).Interior.Color = 5296274  # Green
 
 Application.Visible = msoTrue
-
