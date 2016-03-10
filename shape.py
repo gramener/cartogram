@@ -122,7 +122,6 @@ def main(args):
     # Launch Excel
     xl = win32com.client.Dispatch("Excel.Application")
     workbook = xl.Workbooks.Add()
-    xl.Visible = msoTrue
 
     # In Excel 2007 / 2010, Excel files have multiple sheets. Remove all but first
     for sheet in range(1, len(workbook.Sheets)):
@@ -179,6 +178,8 @@ def main(args):
         sheet.Cells(1, 2).Interior.Color = 255      # Red
         sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
         sheet.Cells(1, 4).Interior.Color = 5296274  # Green
+
+    xl.Visible = msoTrue
 
 
 if __name__ == '__main__':
