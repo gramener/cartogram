@@ -28,7 +28,10 @@ count = Counter()
 
 
 def projection(lon, lat):
-    """Albers: http://mathworld.wolfram.com/AlbersEqual-AreaConicProjection.html"""
+    """
+    Albers:http://mathworld.wolfram.com/AlbersEqual-AreaConicProjection.html
+
+    """
 
     lon, lat = lon * math.pi / 180, lat * math.pi / 180
     # Origin of Cartesian coordinates
@@ -43,8 +46,6 @@ def projection(lon, lat):
     rho0 = ((c - 2 * n * math.sin(phi0)) / n) ** .5
     x, y = rho * math.sin(theta), rho0 - rho * math.cos(theta)
     return x, -y
-
-
 
 
 def draw(base, topo, key):
@@ -79,7 +80,8 @@ def draw(base, topo, key):
     size = min(400 / dx, 400 / dy)
 
     for i, points in enumerate(coords):
-        coords[i] = [(x0 + (px - minx) * size, y0 + (py - miny) * size) for px, py in points]
+        coords[i] = [(x0 + (px - minx) * size, y0 + (py - miny) * size)
+                     for px, py in points]
 
     for shape in topo['objects'].values():
         for geom in shape['geometries']:
@@ -92,7 +94,7 @@ def draw(base, topo, key):
             for i, arcgroup in enumerate(geom['arcs']):
                 # Consolidate shapes into a point list. TODO: factor in holes
                 points = []
-                if type(arcgroup[0]) == int:
+                if isinstance(arcgroup[0], int):
                     pass
                 else:
                     arcgroup = arcgroup[0]
@@ -128,7 +130,8 @@ def main(args):
     xl = win32com.client.Dispatch("Excel.Application")
     workbook = xl.Workbooks.Add()
 
-    # In Excel 2007 / 2010, Excel files have multiple sheets. Remove all but first
+    # In Excel 2007 / 2010, Excel files have multiple sheets. Remove all but
+    # first
     for sheet in range(1, len(workbook.Sheets)):
         workbook.Sheets[1].Delete()
 
@@ -168,7 +171,8 @@ def main(args):
 
     # Add visual basic code. http://www.cpearson.com/excel/vbe.aspx
     # Requires Excel modification: http://support.microsoft.com/kb/282830
-    # to resolve error 'Programmatic Access to Visual Basic Project is not trusted'
+    # to resolve error 'Programmatic Access to Visual Basic Project is not
+    # trusted'
     vbproj = workbook.VBProject
     for sheet in workbook.Worksheets:
         codemod = vbproj.VBComponents(sheet.Name).CodeModule
@@ -183,8 +187,10 @@ def main(args):
         sheet.Cells(1, 2).Interior.Color = 255      # Red
         sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
         sheet.Cells(1, 4).Interior.Color = 5296274  # Green
-
-    xl.Visible = msoTrue
+    filename = args.file[0].split('.')[0] + '.xlsx'
+    workbook.SaveAs(filename)
+    workbook.Close()
+#    xl.Visible = msoTrue
 
 
 if __name__ == '__main__':
@@ -193,8 +199,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=__doc__.strip(),
         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--key', nargs='*', default=[], help='Properties to be used as keys')
-    parser.add_argument('--encoding', help='Input topojson encoding', default='utf-8')
+    parser.add_argument(
+        '--key',
+        nargs='*',
+        default=[],
+        help='Properties to be used as keys')
+    parser.add_argument(
+        '--encoding',
+        help='Input topojson encoding',
+        default='utf-8')
     parser.add_argument('file', help='TopoJSON files', nargs='+')
     args = parser.parse_args()
 
