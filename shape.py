@@ -143,6 +143,7 @@ def main(args):
         'Create a key by joining key columns from properties'
         return ':'.join(properties.get(k, '') for k in args.key).title()
 
+    c_id = 0
     for pathspec in args.file:
         for filename in glob.glob(pathspec):
             print(filename)
@@ -154,17 +155,20 @@ def main(args):
                 sheet = workbook.Sheets.Add()
                 row = start_row
             for prop in draw(sheet, data, key):
+                c_id = c_id + 1
                 sheet.Cells(row, 1).Value = 0
+                sheet.Cells(row, 2).Value = "ID" + str(c_id)
                 for attr, val in prop.iteritems():
                     if attr not in propcol:
                         propcol[attr] = len(propcol)
-                    sheet.Cells(row, propcol[attr] + 2).Value = val
+                    sheet.Cells(row, propcol[attr] + 3).Value = val
                 row += 1
                 sys.stdout.write('.')
 
             sheet.Cells(start_row - 1, 1).Value = 'Value'
+            sheet.Cells(start_row - 1, 2).Value = 'ID'
             for attr, column in propcol.iteritems():
-                sheet.Cells(start_row - 1, column + 2).Value = attr
+                sheet.Cells(start_row - 1, column + 3).Value = attr
 
             if not single_sheet:
                 sheet.Name = os.path.splitext(os.path.basename(filename))[0]
@@ -188,9 +192,9 @@ def main(args):
         sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
         sheet.Cells(1, 4).Interior.Color = 5296274  # Green
     filename = args.file[0].split('.')[0] + '.xlsx'
-    workbook.SaveAs(filename)
-    workbook.Close()
-#    xl.Visible = msoTrue
+#    workbook.SaveAs(filename)
+#    workbook.Close()
+    xl.Visible = msoTrue
 
 
 if __name__ == '__main__':
