@@ -6,10 +6,19 @@ import lxml.html
 import subprocess
 from six.moves.urllib.request import urlretrieve
 from zipfile import ZipFile
-from six.moves.urllib.error import ContentTooShortError
+# from six.moves.urllib.error import ContentTooShortError
+import shape
+import shlex
+import argparse
 
 
-def gadm_download_files(target='gadmzips', limit=10):
+class JSONFileObject(object):
+    encoding = 'utf-8'
+    file = []
+    key = []
+
+
+def gadm_download_files(target, limit=10):
     '''
     Download the shape files from gadm into target folder with the following
     structure:
@@ -18,9 +27,9 @@ def gadm_download_files(target='gadmzips', limit=10):
     - `/target/AFG_adm_shp/` stores the topojson files for AFG_ADM.shp
     - `/target/...` etc
     '''
-    zip_dir = os.path.join(target, 'zipfiles')
+    zip_dir = os.path.join(target, 'gadmzips/zipfiles')
     if not os.path.exists(zip_dir):
-        makedirs(zip_dir)
+        os.makedirs(zip_dir)
 
     gadm_page_url = 'http://www.gadm.org/country'
     response = requests.get(gadm_page_url)
@@ -36,7 +45,9 @@ def gadm_download_files(target='gadmzips', limit=10):
         zip_path = os.path.join(zip_dir, zip_name)
         if not os.path.exists(zip_path):
             logging.info('%s: downloading', zip_name)
-            urlretrieve('http://biogeo.ucdavis.edu/data/gadm2.8/shp/' + zip_name, zip_path)
+            urlretrieve(
+                'http://biogeo.ucdavis.edu/data/gadm2.8/shp/' +
+                zip_name, zip_path)
         else:
             logging.info('%s: downloaded', zip_name)
         yield zip_path
@@ -44,9 +55,11 @@ def gadm_download_files(target='gadmzips', limit=10):
 
 def unzip_gadm_file(zip_path):
     '''
-    Unzip zip_path='gadmzips/zipfiles/ATA_adm_shp.zip' into 'gadmzips/ATA_adm_shp'
+    Unzip zip_path='E:\cartogram\gadmzips/zipfiles/ATA_adm_shp.zip'
+    into 'gadmzips/ATA_adm_shp'
     '''
-    dirname, filename = os.path.split(zip_path)         # gadmzips/zipfiles, ATA_adm_shp.zip
+    dirname, filename = os.path.split(
+        zip_path)         # E:\cartogram\gadmzips/zipfiles, ATA_adm_shp.zip
     folder = os.path.splitext(filename)[0]              # ATA_adm_shp
     parent = os.path.dirname(dirname)                   # gadmzips
     shapefile_dir = os.path.join(parent, folder)        # gadmzips/ATA_adm_shp
@@ -56,26 +69,53 @@ def unzip_gadm_file(zip_path):
     return shapefile_dir
 
 
-def create_topojson(shp_dir):
+def create_topojson(shp_dir, json_obj):
     '''
     Generate topojson files using shape files.
     It passes the topojson files to external file named 'shape.py'
     to generate excel-maps using these files.
     '''
+    shapefile_names = []
+    subdir = None
     for shapefile_path in glob.glob(os.path.join(shp_dir, '*.shp')):
-        subdir, shapefile_name = os.path.split(os.path.abspath(shapefile_path))
-        json_file = os.path.basename(shapefile_name) + '.json'
-        if not os.path.exists(os.path.join(subdir, json_file)):
-            logging.info('%s: creating', json_file)
-            returncode = subprocess.call(
-                cmd['topojson', shapefile_name, '-o', json_file],
-                cwd=subdir, shell=True)
-        else:
-            logging.info('%s: exists', json_file)
+        subdir, file_name = os.path.split(os.path.abspath(shapefile_path))
+        shapefile_names.append(file_name)
+
+    file_name = ' '.join(shapefile_names)
+    json_file = shp_dir.split('\\')[-1] + '.json'
+
+    if not os.path.exists(os.path.join(subdir, json_file)):
+        logging.info('%s: creating', json_file)
+        # returncode = subprocess.call(
+        #         cmd['topojson', shapefile_name, '-o', json_file],
+        #         cwd=subdir, shell=True)
+        cmd = 'topojson ' + file_name + ' -o ' + json_file
+        process = subprocess.Popen(
+            shlex.split(cmd),
+            cwd=subdir, shell=True)
+        process.wait()
+        json_obj.file = [json_file]
+#        shape.main(json_obj)
+    else:
+        logging.info('%s: exists', json_file)
 
 
 if __name__ == '__main__':
+    # setting up logging level
     logging.basicConfig(level=logging.INFO)
-    for zip_path in gadm_download_files(limit=10):
+
+    # argument parser to specify the directory location
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--directory',
+        help='directory path inside which zipfiles should be downloaded',
+        default=os.getcwd())
+    args = parser.parse_args()
+    logging.info('%s: creating directory structure', args.directory)
+
+    # Object for shape module working
+    json_obj = JSONFileObject()
+    for zip_path in gadm_download_files(
+            target=os.path.abspath(args.directory), limit=1):
         shapefile_dir = unzip_gadm_file(zip_path)
-        create_topojson(shapefile_dir)
+        create_topojson(shapefile_dir, json_obj)

@@ -21,7 +21,7 @@ Private Sub Worksheet_Change(ByVal Target As Range)
 
         For Each Cell In Target.Cells
             ShapeName = Cell.Offset(0, 1).value
-            If ShapeName <> ":" Then
+            If ShapeName <> "" Then
                 Set Shape = ActiveSheet.Shapes(ShapeName)
                 With Shape.Fill
                     .ForeColor.RGB = Gradient(Cell.value, g, v, n)

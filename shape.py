@@ -192,9 +192,9 @@ def main(args):
         sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
         sheet.Cells(1, 4).Interior.Color = 5296274  # Green
     filename = args.file[0].split('.')[0] + '.xlsx'
-#    workbook.SaveAs(filename)
-#    workbook.Close()
-    xl.Visible = msoTrue
+    workbook.SaveAs(filename)
+    workbook.Close()
+#    xl.Visible = msoTrue
 
 
 if __name__ == '__main__':

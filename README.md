@@ -25,13 +25,31 @@ Please follow the below link for more information on **TopoJSON**
 Introduction · mbostock/topojson Wiki ---   https://github.com/mbostock/topojson/wiki/Introduction
 
 ### How to create TopoJSON File
-This code repository is creating topojson files using shapefiles. The file **getshapefiles** is a python script which downloads the shape files of world countries from **gadm** resource and converts them into **TopoJSON** format internally. As explained earlier **TopoJSON** is a topology to describe figures using geomerical objects.
+This code repository is creating topojson files using shapefiles. The file ```getshapefiles.py``` is a python script which downloads the shape files of world countries from **gadm** resource and converts them into **TopoJSON** format internally. As explained earlier **TopoJSON** is a topology to describe figures using geomerical objects.
 
-The python script can easily be run using **python** command line interface, It will automatically **download**, **store** and **create** topojson files for the shape files.
+###### Creating TopoJSON File :
+####
+``` 
+python getshapefiles.py
+usage: getshapefiles.py [-h] [--directory DIRECTORY]
+optional arguments:
+  -h, --help show this help message and exit
+  --directory DIRECTORY directory path inside which zipfiles should be downloaded
+ ```
 
 ### How to create Excel-Maps using TopoJSON files
-The python script **getshapefiles** implements a method which sends the earlier created topojson files to external python script named **shape.py** which reads the topojson and draw the curves over excel sheets. It automatically saves excel maps which can be accessed any later time.
+The python script ```getshapefiles.py``` implements a method which sends the earlier created topojson files to external python script named ``shape.py`` which reads the topojson and draw the curves over excel sheets. It automatically saves excel maps which can be accessed any later time.
 
+In case to use ``shape.py`` explicitly to create excel-maps using **topojson** files, then use below commands.
 
-
-
+```
+python shape.py
+usage: shape.py [-h] [--key [KEY [KEY ...]]] [--encoding ENCODING]
+                file [file ...]
+Create an Excel map from topojson files.
+positional arguments:
+  file  TopoJSON files
+optional arguments:
+  -h, --help show this help message and exit
+  --key [KEY [KEY ...]] Properties to be used as keys
+  --encoding ENCODING  Input topojson encoding
