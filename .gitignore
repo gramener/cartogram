@@ -1,2 +1,4 @@
 # Ignore gadmzips/ output created by getshapefile.py
 gadmzips/
+*.sublime-workspace
+*.pyc

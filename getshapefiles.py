@@ -75,29 +75,20 @@ def create_topojson(shp_dir, json_obj):
     It passes the topojson files to external file named 'shape.py'
     to generate excel-maps using these files.
     '''
-    shapefile_names = []
-    subdir = None
     for shapefile_path in glob.glob(os.path.join(shp_dir, '*.shp')):
-        subdir, file_name = os.path.split(os.path.abspath(shapefile_path))
-        shapefile_names.append(file_name)
-
-    file_name = ' '.join(shapefile_names)
-    json_file = shp_dir.split('\\')[-1] + '.json'
-
-    if not os.path.exists(os.path.join(subdir, json_file)):
-        logging.info('%s: creating', json_file)
-        # returncode = subprocess.call(
-        #         cmd['topojson', shapefile_name, '-o', json_file],
-        #         cwd=subdir, shell=True)
-        cmd = 'topojson ' + file_name + ' -o ' + json_file
-        process = subprocess.Popen(
-            shlex.split(cmd),
-            cwd=subdir, shell=True)
-        process.wait()
-        json_obj.file = [json_file]
-#        shape.main(json_obj)
-    else:
-        logging.info('%s: exists', json_file)
+        subdir, shapefile_name = os.path.split(os.path.abspath(shapefile_path))
+        json_file = os.path.basename(shapefile_name) + '.json'
+        if not os.path.exists(os.path.join(subdir, json_file)):
+            logging.info('%s: creating', json_file)
+            cmd = 'topojson ' + shapefile_name + ' -o ' + json_file
+            process = subprocess.Popen(
+                shlex.split(cmd),
+                cwd=subdir, shell=True)
+            process.wait()
+            json_obj.file = [json_file]
+            shape.main(json_obj)
+        else:
+            logging.info('%s: exists', json_file)
 
 
 if __name__ == '__main__':
