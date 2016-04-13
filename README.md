@@ -30,11 +30,18 @@ This code repository is creating topojson files using shapefiles. The file ```ge
 ###### Creating TopoJSON File :
 ####
 ``` 
-python getshapefiles.py
-usage: getshapefiles.py [-h] [--directory DIRECTORY]
+python getshapefiles.py --help
+usage: getshapefiles.py [-h] [-d DIRECTORY] [-s SOURCE]
+
 optional arguments:
-  -h, --help show this help message and exit
-  --directory DIRECTORY directory path inside which zipfiles should be downloaded
+  -h, --help            show this help message and exit
+  -d DIRECTORY, --directory DIRECTORY
+                        directory path inside which zipfiles should be
+                        downloaded
+  -s SOURCE, --source SOURCE
+                        Web source from where shape files needs to be
+                        downloaded
+
  ```
 
 ### How to create Excel-Maps using TopoJSON files
@@ -53,3 +60,4 @@ optional arguments:
   -h, --help show this help message and exit
   --key [KEY [KEY ...]] Properties to be used as keys
   --encoding ENCODING  Input topojson encoding
+```

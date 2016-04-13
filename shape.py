@@ -113,7 +113,7 @@ def draw(base, topo, key):
                 shape.Line.Weight = 0.25
                 shape.Line.ForeColor.ObjectThemeColor = msoThemeColorBackground1
 
-                shapename = shape.Name = '{:s}_{:d}'.format(name, count[name])
+                shapename = shape.Name = 'ID_{:d}'.format(count[name])
                 names.append(shapename)
                 count[name] += 1
 
@@ -122,7 +122,7 @@ def draw(base, topo, key):
                 shape = base.Shapes.Range(names).Group()
                 shape.Name = name or 'NA'
 
-            yield properties
+            yield properties, shapename
 
 
 def main(args):
@@ -143,7 +143,6 @@ def main(args):
         'Create a key by joining key columns from properties'
         return ':'.join(properties.get(k, '') for k in args.key).title()
 
-    c_id = 0
     for pathspec in args.file:
         for filename in glob.glob(pathspec):
             print(filename)
@@ -154,10 +153,9 @@ def main(args):
             else:
                 sheet = workbook.Sheets.Add()
                 row = start_row
-            for prop in draw(sheet, data, key):
-                c_id = c_id + 1
+            for prop, s_name in draw(sheet, data, key):
                 sheet.Cells(row, 1).Value = 0
-                sheet.Cells(row, 2).Value = "ID" + str(c_id)
+                sheet.Cells(row, 2).Value = s_name
                 for attr, val in prop.iteritems():
                     if attr not in propcol:
                         propcol[attr] = len(propcol)
@@ -194,7 +192,7 @@ def main(args):
     filename = args.file[0].split('.')[0] + '.xlsx'
     workbook.SaveAs(filename)
     workbook.Close()
-#    xl.Visible = msoTrue
+    # xl.Visible = msoTrue
 
 
 if __name__ == '__main__':
