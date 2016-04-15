@@ -22,6 +22,7 @@ msoThemeColorText1 = 13
 msoThemeColorBackground1 = 14
 msoThemeColorBackground2 = 16
 vbext_ct_StdModule = 1
+xlOpenXMLWorkbookMacroEnabled = 52
 
 # Keep count of how many times each shape key has been used
 count = Counter()
@@ -32,12 +33,13 @@ def projection(lon, lat):
     Albers:http://mathworld.wolfram.com/AlbersEqual-AreaConicProjection.html
 
     """
+    deg2rad = math.pi / 180
 
-    lon, lat = lon * math.pi / 180, lat * math.pi / 180
+    lon, lat = lon * deg2rad, lat * deg2rad
     # Origin of Cartesian coordinates
-    phi0, lambda0 = 24 * math.pi / 180, 80 * math.pi / 180
+    phi0, lambda0 = 24 * deg2rad, 80 * deg2rad
     # Standard parallels
-    phi1, phi2 = 8 * math.pi / 180, 37 * math.pi / 180
+    phi1, phi2 = 8 * deg2rad, 37 * deg2rad
 
     n = .5 * (math.sin(phi1) + math.sin(phi2))
     theta = n * (lon - lambda0)
@@ -76,8 +78,9 @@ def draw(base, topo, key):
     dx, dy = maxx - minx, maxy - miny
 
     # We want the map in a 400x400 bounding box at 400, 20
-    x0, y0 = 400, 20
-    size = min(400 / dx, 400 / dy)
+    width = 400
+    x0, y0 = width, 20
+    size = min(width / dx, width / dy)
 
     for i, points in enumerate(coords):
         coords[i] = [(x0 + (px - minx) * size, y0 + (py - miny) * size)
@@ -178,7 +181,7 @@ def main(args):
     vbproj = workbook.VBProject
     for sheet in workbook.Worksheets:
         codemod = vbproj.VBComponents(sheet.Name).CodeModule
-        for line, row in enumerate(open('shape.bas')):
+        for line, row in enumerate(io.open('shape.bas', encoding='utf-8')):
             codemod.InsertLines(line + 1, row)
 
         # Set the gradient
@@ -189,9 +192,12 @@ def main(args):
         sheet.Cells(1, 2).Interior.Color = 255      # Red
         sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
         sheet.Cells(1, 4).Interior.Color = 5296274  # Green
-    filename = args.file[0].split('.')[0] + '.xlsx'
-    workbook.SaveAs(filename)
+    filename = os.path.abspath(args.file[0].split('.')[0] + '.xlsm')
+    if os.path.exists(filename):
+        os.unlink(filename)
+    workbook.SaveAs(filename, xlOpenXMLWorkbookMacroEnabled)
     workbook.Close()
+    # To display Excel at this point, use:
     # xl.Visible = msoTrue
 
 
