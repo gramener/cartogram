@@ -18,7 +18,7 @@ class JSONFileObject(object):
     key = []
 
 
-def gadm_download_files(source_page_url, target, limit=10):
+def gadm_download_files(target, limit=10):
     '''
     Download the shape files from gadm into target folder with the following
     structure:
@@ -27,11 +27,12 @@ def gadm_download_files(source_page_url, target, limit=10):
     - `/target/AFG_adm_shp/` stores the topojson files for AFG_ADM.shp
     - `/target/...` etc
     '''
+    gadm_page_url = 'http://www.gadm.org/country'
     zip_dir = os.path.join(target, 'gadmzips/zipfiles')
     if not os.path.exists(zip_dir):
         os.makedirs(zip_dir)
 
-    response = requests.get(source_page_url)
+    response = requests.get(gadm_page_url)
     tree = lxml.html.fromstring(response.content)
     country_codes = tree.xpath('//select[@name="cnt"]/option')
     for country_code in country_codes[:limit]:
@@ -101,18 +102,12 @@ if __name__ == '__main__':
         '--directory',
         help='directory path inside which zipfiles should be downloaded',
         default=os.getcwd())
-    parser.add_argument(
-        '-s',
-        '--source',
-        help='Web source from where shape files needs to be downloaded',
-        default='http://www.gadm.org/country')
     args = parser.parse_args()
     logging.info('%s: creating directory structure', args.directory)
 
     # Object for shape module working
     json_obj = JSONFileObject()
-    for zip_path in gadm_download_files(source=args.source,
-                                        target=os.path.abspath(args.directory),
+    for zip_path in gadm_download_files(target=os.path.abspath(args.directory),
                                         limit=1):
         shapefile_dir = unzip_gadm_file(zip_path)
         create_topojson(shapefile_dir, json_obj)
