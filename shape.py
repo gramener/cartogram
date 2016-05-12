@@ -192,7 +192,7 @@ def main(args):
         sheet.Cells(1, 2).Interior.Color = 255      # Red
         sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
         sheet.Cells(1, 4).Interior.Color = 5296274  # Green
-    filename = os.path.abspath(args.file[0].split('.')[0] + '.xlsm')
+    filename = args.file[0].split('.')[0] + '.xlsm'
     if os.path.exists(filename):
         os.unlink(filename)
     workbook.SaveAs(filename, xlOpenXMLWorkbookMacroEnabled)
