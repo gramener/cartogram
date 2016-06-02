@@ -123,7 +123,8 @@ def draw(base, topo, key):
             # Group shapes if required
             if n_arcs > 1:
                 shape = base.Shapes.Range(names).Group()
-                shape.Name = name or 'NA'
+                shapename = shape.Name = name or 'ID_{:d}'.format(count[name])
+                count[name] += 1
 
             yield properties, shapename
 
@@ -192,13 +193,16 @@ def main(args):
         sheet.Cells(1, 2).Interior.Color = 255      # Red
         sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
         sheet.Cells(1, 4).Interior.Color = 5296274  # Green
-    filename = args.file[0].split('.')[0] + '.xlsm'
+    filename = os.path.abspath(args.file[0].split('.')[0] + '.xlsm')
     if os.path.exists(filename):
         os.unlink(filename)
+    sys.stdout.write('\n')
+    print('Saving as', filename)
     workbook.SaveAs(filename, xlOpenXMLWorkbookMacroEnabled)
     workbook.Close()
     # To display Excel at this point, use:
     # xl.Visible = msoTrue
+    xl.Quit()
 
 
 if __name__ == '__main__':
