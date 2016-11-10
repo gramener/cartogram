@@ -2,3 +2,11 @@
 gadmzips/
 *.sublime-workspace
 *.pyc
+
+# Ignore any Excel files or TopoJSON files
+*.xlsx
+*.xlsm
+*.json
+
+# Ignore CSV files -- created by shopify.py for product templates
+*.csv
