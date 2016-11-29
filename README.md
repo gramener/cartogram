@@ -1,35 +1,31 @@
+# Excel Maps
 
-# Creating Excel-Maps using Shape Files
+This application generates Excel maps from shape files.
 
-This document describes how to generate excel-maps using shape files.
+## Usage
 
-#### Points to highlight
-* What is a Shape File 
-* What is a TopoJSON file 
-* How to create TopoJSON file
-* How to create Excel-Maps using TopoJSON file
+Use [topojson](https://github.com/mbostock/topojson) to convert your shape file into a topoJSON file. Then run:
 
-### What is a Shape File ?
+    python shape.py path/to/topo.json
 
-The **shapefile** format is a digital vector storage format for storing geometric location and associated attribute information. This format lacks the capacity to store topological information. It is possible to read and write geographical datasets using the shapefile format with a wide variety of software.
+This creates `topo.xlsm` in the current directory with the map.
 
-The shapefile format is simple because it can store the primitive geometric data types of points, lines, and polygons. Shapes (points/lines/polygons) together with data attributes can create infinitely many representations about geographic data. Representation provides the ability for powerful and accurate computations.
+This takes a number of options that can be used independently:
 
-The three mandatory files have filename extensions .shp, .shx, and .dbf. The actual shapefile relates specifically to the .shp file, but alone is incomplete for distribution as the other supporting files are required. Legacy GIS software may expect that the filename prefix be limited to eight characters to conform to the DOS 8.3 filename convention, though modern software applications accept files with longer names.
+    shape.py topo.json --out outfile.xlsm        # Saves to outfile.xlsm
+    shape.py topo.json --col STATE,DISTRICT      # Only add STATE and DISTRICT columns to Excel
+    shape.py topo.json --key STATE,DISTRICT      # Uses STATE:DISTRICT columns as key
+    shape.py topo.json --filters ST=AP|TN,CN=IN  # Only draw features where CN is IN, and ST is AP or TN
+    shape.py topo.json --show                    # Show Excel while drawing (slow, useful to debug)
+    shape.py topo.json --enc cp1252              # Switch encoding of the TopoJSON file
+    shape.py topo.json --license license-key     # Generate protected Excel file with specified license key
 
+To display the properties, use:
 
-### What is a TopoJSON File ?
-**TopoJSON**  is an extension of **GeoJSON**. **TopoJSON** introduces a new type of "Topology", that contains GeoJSON objects. A topology has an objects map which indexes geometry objects by name. These are standard GeoJSON objects, such as polygons, multi-polygons and geometry collections. However, the coordinates for these geometries are stored in the topology's arcs array, rather than on each object separately. An arc is a sequence of points, similar to a line string; the arcs are stitched together to form the geometry. Lastly, the topology has a transform which specifies how to convert delta-encoded integer coordinates to their native values (such as longitude & latitude).
-Please follow the below link for more information on **TopoJSON** 
+    shape.py topo.json --prop prop.csv          # Saves all properties in prop.csv
+    shape.py topo.json --prop -                 # Summarises properties on screen
 
-Introduction · mbostock/topojson Wiki ---   https://github.com/mbostock/topojson/wiki/Introduction
-
-### How to create TopoJSON File
-This code repository is creating topojson files using shapefiles. The file ```getshapefiles.py``` is a python script which downloads the shape files of world countries from **gadm** resource and converts them into **TopoJSON** format internally. As explained earlier **TopoJSON** is a topology to describe figures using geomerical objects.
-
-###### Creating TopoJSON File :
-####
-``` 
+```
 python getshapefiles.py --help
 usage: getshapefiles.py [-h] [-d DIRECTORY]
 
@@ -41,20 +37,4 @@ optional arguments:
 
  ```
 
-### How to create Excel-Maps using TopoJSON files
 The python script ```getshapefiles.py``` implements a method which sends the earlier created topojson files to external python script named ``shape.py`` which reads the topojson and draw the curves over excel sheets. It automatically saves excel maps which can be accessed any later time.
-
-In case to use ``shape.py`` explicitly to create excel-maps using **topojson** files, then use below commands.
-
-```
-python shape.py
-usage: shape.py [-h] [--key [KEY [KEY ...]]] [--encoding ENCODING]
-                file [file ...]
-Create an Excel map from topojson files.
-positional arguments:
-  file  TopoJSON files
-optional arguments:
-  -h, --help show this help message and exit
-  --key [KEY [KEY ...]] Properties to be used as keys
-  --encoding ENCODING  Input topojson encoding
-```

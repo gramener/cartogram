@@ -1,3 +1,11 @@
+Public Function UNID()
+    Set WMI = GetObject("winmgmts:!\\.\root\cimv2")
+    Set Board = WMI.ExecQuery("Select * from Win32_BaseBoard")
+    For Each b In Board
+        UNID = b.SerialNumber
+    Next b
+End Function
+
 Private Sub Worksheet_Change(ByVal Target As Range)
     Dim KeyCells As Range
 
@@ -7,6 +15,17 @@ Private Sub Worksheet_Change(ByVal Target As Range)
 
     If Not Application.Intersect(KeyCells, Range(Target.Address)) _
            Is Nothing Then
+
+        {% if license %}
+        ' Validate the UNID
+        LicenseKey = "{{ license }}"
+        ID = UNID()
+        If ID <> LicenseKey Then
+            InputBox "This file is only valid for the machine " & LicenseKey & _
+                ". Your machine is:", "Invalid License", ID
+            Exit Sub
+        End If
+        {% end %}
 
         ' Get the range of colors for up to 255 cells (B-IV)
         Dim g(0 To 255)
