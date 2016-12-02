@@ -1,11 +1,3 @@
-Public Function UNID()
-    Set WMI = GetObject("winmgmts:!\\.\root\cimv2")
-    Set Board = WMI.ExecQuery("Select * from Win32_BaseBoard")
-    For Each b In Board
-        UNID = b.SerialNumber
-    Next b
-End Function
-
 Private Sub Worksheet_Change(ByVal Target As Range)
     Dim KeyCells As Range
 
@@ -96,4 +88,13 @@ Public Function RGBval(Cell)
     g = c \ 256
     r = c - g * 256
     RGBval = Array(r / 255, g / 255, b / 255)
+End Function
+
+
+Public Function UNID()
+    Set WMI = GetObject("winmgmts:!\\.\root\cimv2")
+    Set Board = WMI.ExecQuery("Select * from Win32_BaseBoard")
+    For Each b In Board
+        UNID = b.SerialNumber
+    Next b
 End Function

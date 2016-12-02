@@ -12,9 +12,9 @@ import win32com.client
 from tqdm import tqdm
 from collections import Counter, OrderedDict
 
-# Define MS Office and Excel constants
-msoEditingAuto = 0x0
-msoSegmentLine = 0x0
+# Define MS Office and Excel constants to make the code VB-like
+msoEditingAuto = 0
+msoSegmentLine = 0
 msoFalse = 0
 msoTrue = -1
 ppLayoutBlank = 0xc
@@ -23,9 +23,27 @@ msoThemeColorBackground1 = 14
 msoThemeColorBackground2 = 16
 vbext_ct_StdModule = 1
 xlOpenXMLWorkbookMacroEnabled = 52
+xlLocationAsObject = 2
+
+# Chart size and position
+WIDTH, HEIGHT = 400, 400
+LEFT, TOP = 400, 50
+
+
+def rgb(r=0, g=0, b=0):
+    return r + 256 * g + 65536 * b
+
+
+# Map Colours
+map_colors = [rgb(r=255), rgb(r=255, g=224), rgb(r=255, g=255), rgb(r=224, g=255), rgb(g=255)]
 
 # Keep count of how many times each shape key has been used
 count = Counter()
+
+
+def delete(path):
+    if os.path.exists(path):
+        os.unlink(path)
 
 
 def projection(lon, lat):
@@ -159,15 +177,15 @@ def draw(sheet, topo):
     maxx, maxy = max(vx), max(vy)
     dx, dy = maxx - minx, maxy - miny
 
-    # We want the map in a 400x400 bounding box at 400, 20
-    width = 400
-    x0, y0 = width, 20
-    size = min(width / dx, width / dy)
+    # We want the map in a WIDTH x WIDTH bounding box at TOP, LEFT
+    x0, y0 = LEFT, TOP
+    size = min(WIDTH / dx, HEIGHT / dy)
 
     for i, points in enumerate(coords):
         coords[i] = [(x0 + (px - minx) * size, y0 + (py - miny) * size)
                      for px, py in points]
     geoms = sum((shape['geometries'] for shape in topo['objects'].values()), [])
+    map_color_index = 0
 
     for geom in tqdm(geoms):
         properties = geom['properties']
@@ -193,6 +211,8 @@ def draw(sheet, topo):
             shape = shape.ConvertToShape()
             shape.Line.Weight = 0.25
             shape.Line.ForeColor.ObjectThemeColor = msoThemeColorBackground1
+            shape.Fill.ForeColor.RGB = map_colors[map_color_index]
+            map_color_index = (map_color_index + 1) % len(map_colors)
 
             shapename = shape.Name = 'ID_{:d}'.format(count['ID'])
             names.append(shapename)
@@ -204,6 +224,28 @@ def draw(sheet, topo):
 
         shapename = shape.Name = name
         yield properties, shapename
+
+
+def screenshot(sheet, img_file):
+    '''Export all shapes on this sheet as an image'''
+    xl = sheet.Application
+    # Resize chart to picture size
+    sheet.Shapes.SelectAll()
+    xl.Selection.Copy()
+
+    # Create chart as a canvas for saving this picture
+    chart = xl.Charts.Add()
+    chart = chart.Location(Where=xlLocationAsObject, Name=sheet.Name)
+    chart.ChartArea.Width = WIDTH
+    chart.ChartArea.Height = HEIGHT
+    chart.Parent.Border.LineStyle = 0
+    chart.ChartArea.ClearContents()
+    chart.ChartArea.Select()
+    chart.Paste()
+
+    # Save chart as image and delete it
+    chart.Export(Filename=img_file)
+    sheet.ChartObjects(1).Delete()
 
 
 def main(args):
@@ -251,6 +293,16 @@ def main(args):
     sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
     sheet.Cells(1, 4).Interior.Color = 5296274  # Green
 
+    # Take a screenshot
+    outfile = args.out or os.path.splitext(os.path.basename(args.file))[0]
+    filename = os.path.abspath(outfile + '.png')
+    delete(filename)
+    screenshot(sheet, filename)
+
+    # Color all shapes in grey
+    sheet.Shapes.SelectAll()
+    xl.Selection.ShapeRange.Fill.ForeColor.RGB = rgb(224, 224, 224)
+
     # Add visual basic code. http://www.cpearson.com/excel/vbe.aspx
     # Requires Excel modification: http://support.microsoft.com/kb/282830
     # to resolve error 'Programmatic Access to Visual Basic Project is not
@@ -264,10 +316,9 @@ def main(args):
         for line, row in enumerate(source.decode('utf-8').split('\n')):
             codemod.InsertLines(line + 1, row)
 
-    sheet.Name = outfile = args.out or os.path.splitext(os.path.basename(args.file))[0]
+    sheet.Name = outfile
     filename = os.path.abspath(outfile + '.xlsm')
-    if os.path.exists(filename):
-        os.unlink(filename)
+    delete(filename)
     print('Saving as', filename)
     workbook.SaveAs(filename, xlOpenXMLWorkbookMacroEnabled)
     workbook.Close()
