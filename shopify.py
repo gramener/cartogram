@@ -3,7 +3,6 @@ Extracts properties from a TopoJSON file into a Shopify CSV file
 '''
 
 import io
-import sys
 import json
 import pandas as pd
 from tqdm import tqdm

@@ -39,7 +39,7 @@ Private Sub Worksheet_Change(ByVal Target As Range)
         Next
 
         For Each Cell In Target.Cells
-            ShapeName = Cell.Offset(0, 1).value
+            ShapeName = Cell.Offset(0, 1).Text
             If ShapeName <> "" Then
                 Set Shape = ActiveSheet.Shapes(ShapeName)
                 With Shape.Fill

@@ -5,11 +5,8 @@ from __future__ import print_function, unicode_literals
 
 import io
 import os
-import sys
-import glob
 import math
 import json
-import logging
 import tornado.template
 import win32com.client
 from tqdm import tqdm
@@ -35,13 +32,16 @@ def projection(lon, lat):
     '''
     Albers: http://mathworld.wolfram.com/AlbersEqual-AreaConicProjection.html
     '''
-    deg2rad = math.pi / 180
+    pi_in_degrees = 180
+    deg2rad = math.pi / pi_in_degrees
 
     lon, lat = lon * deg2rad, lat * deg2rad
     # Origin of Cartesian coordinates
-    phi0, lambda0 = 24 * deg2rad, 80 * deg2rad
+    india_lat, india_lon = 24, 80
+    phi0, lambda0 = india_lat * deg2rad, india_lon * deg2rad
     # Standard parallels
-    phi1, phi2 = 8 * deg2rad, 37 * deg2rad
+    india_lat_min, india_lat_max = 8, 37
+    phi1, phi2 = india_lat_min * deg2rad, india_lat_max * deg2rad
 
     n = .5 * (math.sin(phi1) + math.sin(phi2))
     theta = n * (lon - lambda0)
@@ -103,9 +103,9 @@ def apply_filters(data, filters):
     data['used_arcs'] = used_arcs
 
 
-def add_cols(data, cols, key=None):
-    keys = [key for key in args.key.split(',') if key]
+def add_cols(data, cols):
     unid_val = [0]
+    keys = [k for k in args.key.split(',') if k]
 
     def key(properties):
         return ':'.join(str(properties.get(k, '')) for k in keys)
@@ -264,8 +264,8 @@ def main(args):
         for line, row in enumerate(source.decode('utf-8').split('\n')):
             codemod.InsertLines(line + 1, row)
 
-    sheet.Name = os.path.splitext(os.path.basename(args.file))[0]
-    filename = os.path.abspath(sheet.Name + '.xlsm')
+    sheet.Name = outfile = args.out or os.path.splitext(os.path.basename(args.file))[0]
+    filename = os.path.abspath(outfile + '.xlsm')
     if os.path.exists(filename):
         os.unlink(filename)
     print('Saving as', filename)
