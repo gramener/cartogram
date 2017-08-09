@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 Create an Excel map from topojson files.
 '''
@@ -5,6 +6,7 @@ from __future__ import print_function, unicode_literals
 
 import io
 import os
+import re
 import math
 import json
 import tornado.template
@@ -28,14 +30,22 @@ xlLocationAsObject = 2
 # Chart size and position
 WIDTH, HEIGHT = 400, 400
 LEFT, TOP = 400, 50
+SIZE = {'width': 0, 'height': 0}            # Store the computed size of the last map
+
+folder = os.path.dirname(os.path.abspath(__file__))
 
 
-def rgb(r=0, g=0, b=0):
-    return r + 256 * g + 65536 * b
+def rgb(r=0, g=0, b=0, r_factor=1, g_factor=256, b_factor=65536):
+    return r * r_factor + g * g_factor + b * b_factor
 
 
 # Map Colours
-map_colors = [rgb(r=255), rgb(r=255, g=224), rgb(r=255, g=255), rgb(r=224, g=255), rgb(g=255)]
+map_colors = [
+    rgb(r=255), rgb(r=255, g=128),
+    rgb(r=255, g=255),
+    rgb(r=128, g=255),
+    rgb(g=255),
+]
 
 # Keep count of how many times each shape key has been used
 count = Counter()
@@ -177,12 +187,13 @@ def draw(sheet, topo):
     maxx, maxy = max(vx), max(vy)
     dx, dy = maxx - minx, maxy - miny
 
-    # We want the map in a WIDTH x WIDTH bounding box at TOP, LEFT
+    # We want the map centered in a WIDTH x HEIGHT bounding box from TOP, LEFT
+    scale = min(WIDTH / dx, HEIGHT / dy)
     x0, y0 = LEFT, TOP
-    size = min(WIDTH / dx, HEIGHT / dy)
+    SIZE['width'], SIZE['height'] = scale * dx, scale * dy
 
     for i, points in enumerate(coords):
-        coords[i] = [(x0 + (px - minx) * size, y0 + (py - miny) * size)
+        coords[i] = [(x0 + (px - minx) * scale, y0 + (py - miny) * scale)
                      for px, py in points]
     geoms = sum((shape['geometries'] for shape in topo['objects'].values()), [])
     map_color_index = 0
@@ -236,12 +247,16 @@ def screenshot(sheet, img_file):
     # Create chart as a canvas for saving this picture
     chart = xl.Charts.Add()
     chart = chart.Location(Where=xlLocationAsObject, Name=sheet.Name)
-    chart.ChartArea.Width = WIDTH
-    chart.ChartArea.Height = HEIGHT
+    chart_padding = {'width': 10, 'height': 30}     # Padding added by Excel charts
+    chart.ChartArea.Width = WIDTH + chart_padding['width']
+    chart.ChartArea.Height = HEIGHT + chart_padding['height']
     chart.Parent.Border.LineStyle = 0
     chart.ChartArea.ClearContents()
     chart.ChartArea.Select()
     chart.Paste()
+    # Center the image
+    xl.Selection.ShapeRange.IncrementLeft((WIDTH - SIZE['width']) / 2)
+    xl.Selection.ShapeRange.IncrementTop((HEIGHT - SIZE['height']) / 2)
 
     # Save chart as image and delete it
     chart.Export(Filename=img_file)
@@ -250,10 +265,9 @@ def screenshot(sheet, img_file):
 
 def main(args):
     # Launch Excel
-    xl = win32com.client.Dispatch('Excel.Application')
     workbook = xl.Workbooks.Add()
 
-    if args.show:
+    if args.view:
         xl.Visible = msoTrue
 
     # In Excel 2007 / 2010, Excel files have multiple sheets. Retain only first
@@ -263,11 +277,12 @@ def main(args):
 
     propcol = {}
 
-    data = load_topojson(args.file, args.enc)
+    data = load_topojson(args.topo, args.enc)
     apply_filters(data, args.filters)
     add_cols(data, args.col.split(','))
 
     row = start_row = 4
+    props = []
     for prop, shapename in draw(sheet, data):
         sheet.Cells(row, 1).Value = 0
         sheet.Cells(row, 2).Value = shapename
@@ -277,6 +292,7 @@ def main(args):
             if attr not in propcol:
                 propcol[attr] = len(propcol)
             sheet.Cells(row, propcol[attr] + 3).Value = val
+            props.append(prop)
         row += 1
 
     sheet.Cells(start_row - 1, 1).Value = 'Value'
@@ -294,14 +310,42 @@ def main(args):
     sheet.Cells(1, 4).Interior.Color = 5296274  # Green
 
     # Take a screenshot
-    outfile = args.out or os.path.splitext(os.path.basename(args.file))[0]
-    filename = os.path.abspath(outfile + '.png')
+    filename = os.path.abspath(args.out + '.png')
     delete(filename)
     screenshot(sheet, filename)
 
+    # Save CSV data
+    if args.csv:
+        import pandas as pd
+        from six import StringIO, string_types
+
+        info = {
+            'Handle': os.path.split(args.out)[-1],
+            'Title': args.out,
+        }
+        if args.attr:
+            info.update(parse_filters(args.attr) if isinstance(args.attr, string_types)
+                        else args.attr)
+        buf = StringIO()
+        pd.DataFrame(props).drop('ID', axis=1).to_html(buf, index=False, classes=None)
+        table = re.sub(r'\s+', ' ', buf.getvalue())
+        info['Body (HTML)'] = (info['Body (HTML)'] or '{table}').format(table=table, **info)
+        # Keys starting with _ are ignored. These are just meant as formatting variables
+        info = {key: val for key, val in info.items() if not key.startswith('_')}
+
+        if os.path.exists(args.csv):
+            # Load data, match columns and update / add record
+            data = pd.read_csv(args.csv, encoding='utf-8').set_index('Handle')
+            handle = info.pop('Handle')
+            info.update({col: '' for col in data.columns if col not in info})
+            data.loc[handle] = {key: val for key, val in info.items() if key in data.columns}
+        else:
+            data = pd.DataFrame([info]).set_index('Handle')
+        data.to_csv(args.csv, encoding='utf-8')
+
     # Color all shapes in grey
     sheet.Shapes.SelectAll()
-    xl.Selection.ShapeRange.Fill.ForeColor.RGB = rgb(224, 224, 224)
+    xl.Selection.ShapeRange.Fill.ForeColor.RGB = rgb(r=224, g=224, b=224)
 
     # Add visual basic code. http://www.cpearson.com/excel/vbe.aspx
     # Requires Excel modification: http://support.microsoft.com/kb/282830
@@ -309,26 +353,25 @@ def main(args):
     # trusted'
     # Note: workbook.VBProject.VBComponents('Sheet1') works. But after renaming
     # the sheet, it still stays Sheet1. So rename sheet AFTER updating VBScript.
-    vbscript = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'shape.bas')
+    vbscript = os.path.join(folder, 'shape.bas')
     with io.open(vbscript, encoding='utf-8') as handle:
         source = tornado.template.Template(handle.read()).generate(license=args.license)
         codemod = workbook.VBProject.VBComponents(sheet.Name).CodeModule
         for line, row in enumerate(source.decode('utf-8').split('\n')):
             codemod.InsertLines(line + 1, row)
 
-    sheet.Name = outfile
-    filename = os.path.abspath(outfile + '.xlsm')
+    sheet.Name = os.path.split(args.out)[-1]
+    filename = os.path.abspath(args.out + '.xlsm')
     delete(filename)
     print('Saving as', filename)
     workbook.SaveAs(filename, xlOpenXMLWorkbookMacroEnabled)
     workbook.Close()
-    xl.Quit()
 
 
 def prop(args):
     import pandas as pd
 
-    data = load_topojson(args.file, args.enc)
+    data = load_topojson(args.topo, args.enc)
     apply_filters(data, args.filters)
     add_cols(data, args.col.split(','))
 
@@ -341,7 +384,7 @@ def prop(args):
         top = properties[col].value_counts().head(5)
         print('%-16s %s' % (col, ', '.join(top.index.astype(str))[:60]))
     if args.prop == '-':
-        print()
+        print('')
         print(properties.head().to_string(index=False, justify='right'))
     else:
         properties.to_csv(args.prop, encoding='cp1252', index=False)
@@ -354,18 +397,44 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=__doc__.strip(),
         formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-t', '--topo', help='TopoJSON file')
     parser.add_argument('-o', '--out', help='File name to save .xlsm file as')
     parser.add_argument('-k', '--key', help='Columns to use as keys (comma-separated)', default='')
     parser.add_argument('-c', '--col', help='Columns to include (comma-separated)', default='')
-    parser.add_argument('-f', '--filters', help='Filters (col=VALUE,col=VALUE,...)', default='')
+    parser.add_argument('-f', '--filters', help='Filters (col=VAL,col=VAL,...)', default='')
     parser.add_argument('-l', '--license', help='License key for Excel')
-    parser.add_argument('-s', '--show', help='Show Excel while rendering', action='store_true')
-    parser.add_argument('--prop', help='Save properties as CSV file (or "-" to print )')
+    parser.add_argument('-v', '--view', help='View Excel while rendering', action='store_true')
+    parser.add_argument('-p', '--prop', help='Save properties as CSV file (or "-" to print )')
     parser.add_argument('-e', '--enc', help='Topojson encoding', default='utf-8')
-    parser.add_argument('file', help='TopoJSON file')
+    parser.add_argument('--csv', help='Generate summary CSV file')
+    parser.add_argument('-a', '--attr', help='CSV file attrs (col=VAL,col=VAL,...)', default='')
+    parser.add_argument('-y', '--yaml', help='Load configuration from a YAML file')
     args = parser.parse_args()
 
-    if args.prop:
-        prop(args)
-    else:
-        main(args)
+    xl = win32com.client.Dispatch('Excel.Application')
+    try:
+        if args.yaml:
+            import yaml
+            with io.open(args.yaml, encoding='utf-8') as handle:
+                config = yaml.load(handle)
+            common = config.get('common', {})
+            for row in tqdm(config.get('maps', [])):
+                arg = parser.parse_args([])
+                for props in [common, row]:
+                    for key, val in props.items():
+                        if isinstance(val, dict):
+                            original = getattr(arg, key, {}) or {}
+                            original.update(val)
+                            val = original
+                        setattr(arg, key, val)
+                # If the generated file is newer than the topoJSON
+                if os.path.exists(arg.out + '.xlsm'):
+                    if os.stat(arg.out + '.xlsm').st_mtime > os.stat(arg.topo).st_mtime:
+                        continue
+                main(arg)
+        elif args.prop:
+            prop(args)
+        else:
+            main(args)
+    finally:
+        xl.Quit()

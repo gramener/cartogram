@@ -1,0 +1,217 @@
+common:
+    topo: maps/india-districts.json
+    key: DISTRICT
+    col: DISTRICT
+    csv: out/districts.csv
+    attr:
+        'Tital': '{_name} District Excel Map'
+        'Body (HTML)': |
+            An interactive Excel map application showing all districts in {_desc} as per the 2011 Census. {table}
+        'Tags': ''
+        'Published': 'TRUE'
+        'Variant Inventory Qty': 0
+        'Variant Inventory Policy': 'deny'
+        'Variant Fulfillment Service': 'manual'
+        'Variant Price': 9999
+        'Variant Requires Shipping': 'FALSE'
+        'Variant Taxable': 'TRUE'
+        'Image Src': ''
+        'Image Alt Text': ''
+        'Gift Card': 'FALSE'
+maps:
+    -
+        filters: "STATE_NAME=ANDHRA PRADESH"
+        out: "out/India-Districts-2011-AP"
+        attr:
+            _name: Andhra Pradesh and Telangana
+            _desc: the state of Andhra Pradesh (including the current state of Telangana)
+    -
+        filters: "STATE_NAME=ARUNACHAL PRADESH"
+        out: "out/India-Districts-2011-AR"
+        attr:
+            _name: Arunachal Pradesh
+            _desc: the state of Arunachal Pradesh
+    -
+        filters: "STATE_NAME=ASSAM"
+        out: "out/India-Districts-2011-AS"
+        attr:
+            _name: Assam
+            _desc: the state of Assam
+    -
+        filters: "STATE_NAME=BIHAR"
+        out: "out/India-Districts-2011-BR"
+        attr:
+            _name: Bihar
+            _desc: the state of Bihar
+    -
+        filters: "STATE_NAME=CHHATTISGARH"
+        out: "out/India-Districts-2011-CT"
+        attr:
+            _name: Chattisgarh
+            _desc: the state of Chattisgarh
+    -
+        filters: "STATE_NAME=GUJARAT"
+        out: "out/India-Districts-2011-GJ"
+        attr:
+            _name: Gujarat
+            _desc: the state of Gujarat
+    -
+        filters: "STATE_NAME=HARYANA"
+        out: "out/India-Districts-2011-HR"
+        attr:
+            _name: Haryana
+            _desc: the state of Haryana
+    -
+        filters: "STATE_NAME=HIMACHAL PRADESH"
+        out: "out/India-Districts-2011-HP"
+        attr:
+            _name: Himachal Pradesh
+            _desc: the state of Himachal Pradesh
+    -
+        filters: "STATE_NAME=JAMMU & KASHMIR|null"
+        out: "out/India-Districts-2011-JK"
+        attr:
+            _name: Jammu and Kashmir
+            _desc: the state of Jammu and Kashmir
+    -
+        filters: "STATE_NAME=JHARKHAND"
+        out: "out/India-Districts-2011-JH"
+        attr:
+            _name: Jharkhand
+            _desc: the state of Jharkhand
+    -
+        filters: "STATE_NAME=KARNATAKA"
+        out: "out/India-Districts-2011-KA"
+        attr:
+            _name: Karnataka
+            _desc: the state of Karnataka
+    -
+        filters: "STATE_NAME=KERALA"
+        out: "out/India-Districts-2011-KL"
+        attr:
+            _name: Kerala
+            _desc: the state of Kerala
+    -
+        filters: "STATE_NAME=MADHYA PRADESH"
+        out: "out/India-Districts-2011-MP"
+        attr:
+            _name: Madhya Pradesh
+            _desc: the state of Madhya Pradesh
+    -
+        filters: "STATE_NAME=MAHARASHTRA"
+        out: "out/India-Districts-2011-MH"
+        attr:
+            _name: Maharashtra
+            _desc: the state of Maharashtra
+    -
+        filters: "STATE_NAME=MANIPUR"
+        out: "out/India-Districts-2011-MN"
+        attr:
+            _name: Manipur
+            _desc: the state of Manipur
+    -
+        filters: "STATE_NAME=MEGHALAYA"
+        out: "out/India-Districts-2011-ML"
+        attr:
+            _name: Meghalaya
+            _desc: the state of Meghalaya
+    -
+        filters: "STATE_NAME=MIZORAM"
+        out: "out/India-Districts-2011-MZ"
+        attr:
+            _name: Mizoram
+            _desc: the state of Mizoram
+    -
+        filters: "STATE_NAME=NAGALAND"
+        out: "out/India-Districts-2011-NL"
+        attr:
+            _name: Nagaland
+            _desc: the state of Nagaland
+    -
+        filters: "STATE_NAME=ORISSA"
+        out: "out/India-Districts-2011-OR"
+        attr:
+            _name: Orissa
+            _desc: the state of Orissa
+    -
+        filters: "STATE_NAME=PUNJAB"
+        out: "out/India-Districts-2011-PB"
+        attr:
+            _name: Punjab
+            _desc: the state of Punjab
+    -
+        filters: "STATE_NAME=RAJASTHAN"
+        out: "out/India-Districts-2011-RJ"
+        attr:
+            _name: Rajasthan
+            _desc: the state of Rajasthan
+    -
+        filters: "STATE_NAME=SIKKIM"
+        out: "out/India-Districts-2011-SK"
+        attr:
+            _name: Sikkim
+            _desc: the state of Sikkim
+    -
+        filters: "STATE_NAME=TAMIL NADU"
+        out: "out/India-Districts-2011-TN"
+        attr:
+            _name: Tamil Nadu
+            _desc: the state of Tamil Nadu
+    -
+        filters: "STATE_NAME=TRIPURA"
+        out: "out/India-Districts-2011-TR"
+        attr:
+            _name: Tripura
+            _desc: the state of Tripura
+    -
+        filters: "STATE_NAME=UTTAR PRADESH"
+        out: "out/India-Districts-2011-UP"
+        attr:
+            _name: Uttar Pradesh
+            _desc: the state of Uttar Pradesh
+    -
+        filters: "STATE_NAME=UTTARANCHAL"
+        out: "out/India-Districts-2011-UT"
+        attr:
+            _name: Uttaranchal
+            _desc: the state of Uttaranchal
+    -
+        filters: "STATE_NAME=WEST BENGAL"
+        out: "out/India-Districts-2011-WB"
+        attr:
+            _name: West Bengal
+            _desc: the state of West Bengal
+    -
+        key: STATE_NAME,DISTRICT
+        col: STATE_NAME,DISTRICT
+        out: "out/India-Districts-2011"
+        attr:
+            _name: India
+            _desc: all states in India
+            "Variant Price": 49999
+
+    # # Ignore these districts because they are too small or haven't come out well
+    # -
+    #     filters: "STATE_NAME=ANDAMAN & NICOBAR"
+    #     out: "out/India-Districts-2011-AN"
+    # -
+    #     filters: "STATE_NAME=CHANDIGARH"
+    #     out: "out/India-Districts-2011-CH"
+    # -
+    #     filters: "STATE_NAME=DADRA & NAGAR HAVELI"
+    #     out: "out/India-Districts-2011-DN"
+    # -
+    #     filters: "STATE_NAME=DAMAN & DIU"
+    #     out: "out/India-Districts-2011-DD"
+    # -
+    #     filters: "STATE_NAME=GOA"
+    #     out: "out/India-Districts-2011-GA"
+    # -
+    #     filters: "STATE_NAME=LAKSHADWEEP"
+    #     out: "out/India-Districts-2011-LD"
+    # -
+    #     filters: "STATE_NAME=PONDICHERRY"
+    #     out: "out/India-Districts-2011-PY"
+    # -
+    #     filters: "STATE_NAME=DELHI"
+    #     out: "out/India-Districts-2011-DL"
