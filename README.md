@@ -73,7 +73,7 @@ maps:
 
 Sample usage:
 
-    shape.py -y config.yaml
+    python shape.py -y config.yaml
 
 ## Notes
 

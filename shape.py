@@ -9,6 +9,7 @@ import os
 import re
 import math
 import json
+import yaml
 import tornado.template
 import win32com.client
 from tqdm import tqdm
@@ -109,7 +110,7 @@ def apply_filters(data, filters):
     def cond(properties):
         '''Return True if properties meet condition'''
         for key, val in filters.items():
-            if str(properties.get(key, '')) not in val:
+            if str(properties.get(key, '')) not in val:     # noqa: E911
                 return False
         return True
 
@@ -136,7 +137,7 @@ def add_cols(data, cols):
     keys = [k for k in args.key.split(',') if k]
 
     def key(properties):
-        return ':'.join(str(properties.get(k, '')) for k in keys)
+        return ':'.join(str(properties.get(k, '')) for k in keys)   # noqa: E911
 
     def unid():
         unid_val[0] += 1
@@ -263,12 +264,15 @@ def screenshot(sheet, img_file):
     sheet.ChartObjects(1).Delete()
 
 
-def main(args):
+def main(xl, args):
     # Launch Excel
     workbook = xl.Workbooks.Add()
 
     if args.view:
         xl.Visible = msoTrue
+    # output file defaults to the base name of the TopoJSON file
+    if not args.out:
+        args.out = os.path.splitext(args.topo)[0]
 
     # In Excel 2007 / 2010, Excel files have multiple sheets. Retain only first
     for sheet in range(1, len(workbook.Sheets)):
@@ -391,12 +395,33 @@ def prop(args):
         print('Saved properties into', args.prop)
 
 
+def batch(args):
+    with io.open(args.yaml, encoding='utf-8') as handle:
+        config = yaml.load(handle)
+    common = config.get('common', {})
+    for row in tqdm(config.get('maps', [])):
+        arg = parser.parse_args([])
+        for props in [common, row]:
+            for key, val in props.items():
+                if isinstance(val, dict):
+                    original = getattr(arg, key, {}) or {}
+                    original.update(val)
+                    val = original
+                setattr(arg, key, val)
+        # If the generated file is newer than the topoJSON
+        if os.path.exists(arg.out + '.xlsm'):
+            if os.stat(arg.out + '.xlsm').st_mtime > os.stat(arg.topo).st_mtime:
+                continue
+        main(xl, arg)
+
+
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
         description=__doc__.strip(),
         formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-y', '--yaml', help='Load configuration from a YAML file')
     parser.add_argument('-t', '--topo', help='TopoJSON file')
     parser.add_argument('-o', '--out', help='File name to save .xlsm file as')
     parser.add_argument('-k', '--key', help='Columns to use as keys (comma-separated)', default='')
@@ -408,33 +433,18 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--enc', help='Topojson encoding', default='utf-8')
     parser.add_argument('--csv', help='Generate summary CSV file')
     parser.add_argument('-a', '--attr', help='CSV file attrs (col=VAL,col=VAL,...)', default='')
-    parser.add_argument('-y', '--yaml', help='Load configuration from a YAML file')
     args = parser.parse_args()
+    if not args.topo and not args.yaml:
+        parser.exit(status=2, message='One of --topo or --yaml is required\n')
 
-    xl = win32com.client.Dispatch('Excel.Application')
-    try:
-        if args.yaml:
-            import yaml
-            with io.open(args.yaml, encoding='utf-8') as handle:
-                config = yaml.load(handle)
-            common = config.get('common', {})
-            for row in tqdm(config.get('maps', [])):
-                arg = parser.parse_args([])
-                for props in [common, row]:
-                    for key, val in props.items():
-                        if isinstance(val, dict):
-                            original = getattr(arg, key, {}) or {}
-                            original.update(val)
-                            val = original
-                        setattr(arg, key, val)
-                # If the generated file is newer than the topoJSON
-                if os.path.exists(arg.out + '.xlsm'):
-                    if os.stat(arg.out + '.xlsm').st_mtime > os.stat(arg.topo).st_mtime:
-                        continue
-                main(arg)
-        elif args.prop:
-            prop(args)
-        else:
-            main(args)
-    finally:
-        xl.Quit()
+    if args.prop:
+        prop(args)
+    else:
+        xl = win32com.client.Dispatch('Excel.Application')
+        try:
+            if args.yaml:
+                batch(args)
+            else:
+                main(xl, args)
+        finally:
+            xl.Quit()
