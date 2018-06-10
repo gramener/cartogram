@@ -34,6 +34,7 @@ LEFT, TOP = 400, 50
 SIZE = {'width': 0, 'height': 0}            # Store the computed size of the last map
 
 folder = os.path.dirname(os.path.abspath(__file__))
+template_file = os.path.join(folder, 'template.xlsm')
 
 
 def rgb(r=0, g=0, b=0, r_factor=1, g_factor=256, b_factor=65536):
@@ -265,19 +266,15 @@ def screenshot(sheet, img_file):
 
 
 def main(xl, args):
-    # Launch Excel
-    workbook = xl.Workbooks.Add()
-
-    if args.view:
-        xl.Visible = msoTrue
+    # Open the template file if it exists. Else create a new one
+    if os.path.exists(template_file):
+        workbook = xl.Workbooks.Open(template_file)
+    else:
+        workbook = xl.Workbooks.Add()
+    sheet = workbook.Sheets[0]
     # output file defaults to the base name of the TopoJSON file
     if not args.out:
         args.out = os.path.splitext(args.topo)[0]
-
-    # In Excel 2007 / 2010, Excel files have multiple sheets. Retain only first
-    for sheet in range(1, len(workbook.Sheets)):
-        workbook.Sheets[1].Delete()
-    sheet = workbook.Sheets[0]
 
     propcol = {}
 
@@ -355,15 +352,15 @@ def main(xl, args):
     # Requires Excel modification: http://support.microsoft.com/kb/282830
     # to resolve error 'Programmatic Access to Visual Basic Project is not
     # trusted'
-    # Note: workbook.VBProject.VBComponents('Sheet1') works. But after renaming
-    # the sheet, it still stays Sheet1. So rename sheet AFTER updating VBScript.
     vbscript = os.path.join(folder, 'shape.bas')
+    vbsheet = 'Sheet1'
     with io.open(vbscript, encoding='utf-8') as handle:
         source = tornado.template.Template(handle.read()).generate(license=args.license)
-        codemod = workbook.VBProject.VBComponents(sheet.Name).CodeModule
+        codemod = workbook.VBProject.VBComponents(vbsheet).CodeModule
         for line, row in enumerate(source.decode('utf-8').split('\n')):
             codemod.InsertLines(line + 1, row)
-
+    # Note: workbook.VBProject.VBComponents('Sheet1') works. But after renaming
+    # the sheet, it still stays Sheet1. So rename sheet AFTER updating VBScript.
     sheet.Name = os.path.split(args.out)[-1]
     filename = os.path.abspath(args.out + '.xlsm')
     delete(filename)
@@ -423,7 +420,7 @@ if __name__ == '__main__':
         formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-y', '--yaml', help='Load configuration from a YAML file')
     parser.add_argument('-t', '--topo', help='TopoJSON file')
-    parser.add_argument('-o', '--out', help='File name to save .xlsm file as')
+    parser.add_argument('-o', '--out', help='Output .xlsm and .png name. Default: Same as --topo')
     parser.add_argument('-k', '--key', help='Columns to use as keys (comma-separated)', default='')
     parser.add_argument('-c', '--col', help='Columns to include (comma-separated)', default='')
     parser.add_argument('-f', '--filters', help='Filters (col=VAL,col=VAL,...)', default='')
@@ -434,6 +431,7 @@ if __name__ == '__main__':
     parser.add_argument('--csv', help='Generate summary CSV file')
     parser.add_argument('-a', '--attr', help='CSV file attrs (col=VAL,col=VAL,...)', default='')
     args = parser.parse_args()
+
     if not args.topo and not args.yaml:
         parser.exit(status=2, message='One of --topo or --yaml is required\n')
 
@@ -441,6 +439,7 @@ if __name__ == '__main__':
         prop(args)
     else:
         xl = win32com.client.Dispatch('Excel.Application')
+        xl.Visible = msoTrue if args.view else msoFalse
         try:
             if args.yaml:
                 batch(args)

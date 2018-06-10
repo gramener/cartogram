@@ -7,6 +7,9 @@ gadmzips/
 *.png
 *.json
 
+# But DO commit the template
+!template.xlsm
+
 # Ignore CSV files -- created by shopify.py for product templates
 *.csv
 
