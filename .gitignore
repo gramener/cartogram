@@ -1,13 +1,14 @@
 # Ignore gadmzips/ output created by getshapefile.py
 gadmzips/
-*.sublime-workspace
 *.pyc
 
 # Ignore any Excel files, images or TopoJSON files
-*.xlsx
-*.xlsm
+*.xls*
 *.png
 *.json
 
 # Ignore CSV files -- created by shopify.py for product templates
 *.csv
+
+# Ignore local TODO files
+TODO

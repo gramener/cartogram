@@ -8,29 +8,31 @@ topojson:
     npm install -g mapshaper
     mapshaper-gui
 
-Then follow the [commnand line usage](#command-line-usage) or [batch usage](#batch-usage) below.
+On the GUI, import your map. Then export as TopoJSON.
+
+Now follow the [command line usage](#command-line-usage) or [batch usage](#batch-usage) below.
 
 ## Command Line Usage
 
-Run:
+Clone this repository. Then, from that directory, run:
 
-    shape.py -t path/to/topo.json --out topo
+    python shape.py -t path/to/topo.json --out output
 
-This creates `topo.xlsm` in the current directory with the map.
+This creates `output.xlsm` in the current directory with the map.
 
 This takes a number of options that can be used independently:
 
-    shape.py -t topo.json --col STATE,DISTRICT     # Only add STATE and DISTRICT columns to Excel
-    shape.py -t topo.json --key STATE,DISTRICT     # Uses STATE:DISTRICT columns as key
-    shape.py -t topo.json --filters ST=AP|TN,C=IN  # Only draw features where C is IN, and ST is AP or TN
-    shape.py -t topo.json --view                   # View Excel while drawing (slow, useful to debug)
-    shape.py -t topo.json --enc cp1252             # Switch encoding of the TopoJSON file
-    shape.py -t topo.json --license license-key    # Generate protected Excel file with specified license key
+    python shape.py -t topo.json --col STATE,DISTRICT     # Only add STATE and DISTRICT columns to Excel
+    python shape.py -t topo.json --key STATE,DISTRICT     # Uses STATE:DISTRICT columns as key
+    python shape.py -t topo.json --filters ST=AP|TN,C=IN  # Only draw features where C is IN, and ST is AP or TN
+    python shape.py -t topo.json --view                   # View Excel while drawing (slow, useful to debug)
+    python shape.py -t topo.json --enc cp1252             # Switch encoding of the TopoJSON file
+    python shape.py -t topo.json --license license-key    # Generate protected Excel file with specified license key
 
-To display the properties, use:
+If you don't know the columns (called properties) in the JSON file, use:
 
-    shape.py -t topo.json --prop prop.csv          # Saves all properties in prop.csv
-    shape.py -t topo.json --prop -                 # Summarises properties on screen
+    python shape.py -t topo.json --prop prop.csv          # Saves all columns in prop.csv
+    python shape.py -t topo.json --prop -                 # Summarises columns on screen
 
 ## Troubleshooting
 
