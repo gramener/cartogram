@@ -10,9 +10,12 @@ import re
 import math
 import json
 import yaml
+import argparse
+import pandas as pd
 import tornado.template
 import win32com.client
 from tqdm import tqdm
+from six import StringIO, string_types
 from collections import Counter, OrderedDict
 
 # Define MS Office and Excel constants to make the code VB-like
@@ -24,6 +27,9 @@ ppLayoutBlank = 0xc
 msoThemeColorText1 = 13
 msoThemeColorBackground1 = 14
 msoThemeColorBackground2 = 16
+msoTextOrientationHorizontal = 0x1
+msoAlignCenter = 0x2
+msoAnchorMiddle = 0x3
 vbext_ct_StdModule = 1
 xlOpenXMLWorkbookMacroEnabled = 52
 xlLocationAsObject = 2
@@ -158,7 +164,14 @@ def add_cols(data, cols):
             geom['properties'] = result
 
 
-def draw(sheet, topo):
+def centroid(points):
+    x, y = 0.0, 0.0
+    for point in points:
+        x, y = x + point[0], y + point[1]
+    return x / len(points), y / len(points)
+
+
+def draw(sheet, topo, row):
     '''
     Draw into a sheet
     the topo (JSON) object
@@ -201,10 +214,12 @@ def draw(sheet, topo):
     geoms = sum((shape['geometries'] for shape in topo['objects'].values()), [])
     map_color_index = 0
 
+    label_info = []
     for geom in tqdm(geoms):
         properties = geom['properties']
         name = properties['ID']
         names = []
+        geom_points = []
 
         # Convert arcs of a geometry into array of points
         for i, arcgroup in enumerate(geom['arcs']):
@@ -217,6 +232,7 @@ def draw(sheet, topo):
                 # arc is an index into point coords. +ve values go clockwise.
                 # Else, it's two's complement (~) goes anti- clockwise.
                 points += coords[arc] if arc >= 0 else coords[~arc][::-1]
+            geom_points += points
 
             # Draw the points
             shape = sheet.Shapes.BuildFreeform(msoEditingAuto, *points[0])
@@ -238,6 +254,23 @@ def draw(sheet, topo):
 
         shapename = shape.Name = name
         yield properties, shapename
+        label_info.append({
+            'centroid': centroid(geom_points),
+            'name': name,
+        })
+
+    for index, info in enumerate(tqdm(label_info)):
+        x, y = info['centroid']
+        sheet.Shapes.AddLabel(msoTextOrientationHorizontal, x - 36, y - 10, 72, 20).Select()
+        xl.Selection.Formula = "=E%d" % (row + index)
+        text = xl.Selection.ShapeRange.TextFrame2
+        text.TextRange.ParagraphFormat.Alignment = msoAlignCenter
+        text.VerticalAnchor = msoAnchorMiddle
+        text.WordWrap = msoFalse
+        text.MarginLeft = 0
+        text.MarginRight = 0
+        text.MarginTop = 0
+        text.MarginBottom = 0
 
 
 def screenshot(sheet, img_file):
@@ -286,7 +319,7 @@ def main(xl, args):
     # Properties table data
     row = start_row = 4
     props = []
-    for prop, shapename in draw(sheet, data):
+    for prop, shapename in draw(sheet, data, row):
         sheet.Cells(row, 1).Value = 0
         sheet.Cells(row, 2).Value = shapename
         for attr, val in prop.items():
@@ -315,7 +348,6 @@ def main(xl, args):
 
     # Format properties table as a table
     sheet.Range(sheet.Cells(start_row - 1, 1), sheet.Cells(row - 1, len(propcol) + 2)).Select()
-    xl.Visible = msoTrue
     table = sheet.ListObjects.Add(XlListObjectHasHeaders=xlYes)
     table.Name = 'Properties'
     table.ShowAutoFilterDropDown = msoFalse
@@ -332,9 +364,6 @@ def main(xl, args):
 
     # Save CSV data
     if args.csv:
-        import pandas as pd
-        from six import StringIO, string_types
-
         info = {
             'Handle': os.path.split(args.out)[-1],
             'Title': args.out,
@@ -385,8 +414,6 @@ def main(xl, args):
 
 
 def prop(args):
-    import pandas as pd
-
     data = load_topojson(args.topo, args.enc)
     apply_filters(data, args.filters)
     add_cols(data, args.col.split(','))
@@ -428,8 +455,6 @@ def batch(args):
 
 
 if __name__ == '__main__':
-    import argparse
-
     parser = argparse.ArgumentParser(
         description=__doc__.strip(),
         formatter_class=argparse.RawTextHelpFormatter)
