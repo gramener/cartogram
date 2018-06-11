@@ -27,6 +27,7 @@ msoThemeColorBackground2 = 16
 vbext_ct_StdModule = 1
 xlOpenXMLWorkbookMacroEnabled = 52
 xlLocationAsObject = 2
+xlYes = 1
 
 # Chart size and position
 WIDTH, HEIGHT = 400, 400
@@ -282,6 +283,7 @@ def main(xl, args):
     apply_filters(data, args.filters)
     add_cols(data, args.col.split(','))
 
+    # Properties table data
     row = start_row = 4
     props = []
     for prop, shapename in draw(sheet, data):
@@ -296,6 +298,7 @@ def main(xl, args):
             props.append(prop)
         row += 1
 
+    # Properties table header
     sheet.Cells(start_row - 1, 1).Value = 'Value'
     sheet.Cells(start_row - 1, 2).Value = 'ID'
     for attr, column in propcol.items():
@@ -309,6 +312,18 @@ def main(xl, args):
     sheet.Cells(1, 2).Interior.Color = 255      # Red
     sheet.Cells(1, 3).Interior.Color = 65535    # Yellow
     sheet.Cells(1, 4).Interior.Color = 5296274  # Green
+
+    # Format properties table as a table
+    sheet.Range(sheet.Cells(start_row - 1, 1), sheet.Cells(row - 1, len(propcol) + 2)).Select()
+    xl.Visible = msoTrue
+    table = sheet.ListObjects.Add(XlListObjectHasHeaders=xlYes)
+    table.Name = 'Properties'
+    table.ShowAutoFilterDropDown = msoFalse
+    table.TableStyle = 'TableStyleLight9'
+    # Do not auto-fit. Data may be too long
+    # table.Range.Columns.AutoFit()
+    # De-select the current table range
+    sheet.Range('A1').Select()
 
     # Take a screenshot
     filename = os.path.abspath(args.out + '.png')
