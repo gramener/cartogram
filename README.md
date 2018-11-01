@@ -41,6 +41,15 @@ If you don't know the columns (called properties) in the JSON file, use:
   Macro Settings > Trust Access to the VBA Project object model.
   [Ref](https://stackoverflow.com/a/25638419/100904).
 
+## Notes
+
+This application uses Windows' COM for automation. It "manually" opens Excel and
+draws the map. So:
+
+- It only runs Windows
+- MS Excel must be installed
+- You mustn't copy-paste things while it's running. It uses the clipboard
+
 ## Batch Usage
 
 Create a `config.yaml` with this structure:
@@ -74,15 +83,6 @@ maps:
 Sample usage:
 
     python shape.py -y config.yaml
-
-## Notes
-
-This application uses Windows automation. It "manually" opens Excel and draws the map. So:
-
-- It cannot run on OSs other than Windows
-- It requires MS Excel to be installed
-- You mustn't copy-paste things while it's running. It uses the clipboard
-
 
 ## Protection
 

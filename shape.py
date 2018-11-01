@@ -131,7 +131,7 @@ def apply_filters(data, filters):
         ]
         # Identify used arcs
         for geom in shape['geometries']:
-            for arcgroup in geom['arcs']:
+            for arcgroup in geom.get('arcs', []):
                 # TODO: factor in holes
                 if isinstance(arcgroup[0], list):
                     arcgroup = arcgroup[0]
@@ -220,6 +220,9 @@ def draw(sheet, topo, row):
         name = properties['ID']
         names = []
         geom_points = []
+
+        if 'arcs' not in geom:
+            continue
 
         # Convert arcs of a geometry into array of points
         for i, arcgroup in enumerate(geom['arcs']):
@@ -394,8 +397,7 @@ def main(xl, args):
 
     # Add visual basic code. http://www.cpearson.com/excel/vbe.aspx
     # Requires Excel modification: http://support.microsoft.com/kb/282830
-    # to resolve error 'Programmatic Access to Visual Basic Project is not
-    # trusted'
+    # to fix error 'Programmatic Access to Visual Basic Project is not trusted'
     vbscript = os.path.join(folder, 'shape.bas')
     vbsheet = 'Sheet1'
     with io.open(vbscript, encoding='utf-8') as handle:
